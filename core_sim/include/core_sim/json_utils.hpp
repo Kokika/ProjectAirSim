@@ -307,6 +307,26 @@ inline void to_json(json& j, const BBox3D& bbox3D) {
             {"quaternion", orientation_json}});
 }
 
+inline void to_json(json& j, const Bone& b) {
+  j = json({{"name", b.name},
+            {"position",
+             {{"x", b.position.x()}, {"y", b.position.y()}, {"z", b.position.z()}}},
+            {"orientation",
+             {{"w", b.orientation.w()},
+              {"x", b.orientation.x()},
+              {"y", b.orientation.y()},
+              {"z", b.orientation.z()}}},
+            {"image_position", {{"x", b.image_position.x()}, {"y", b.image_position.y()}}}});
+}
+
+inline void to_json(json& j, const Skeleton& s) {
+  json bones_json = json::array();
+  for (const auto& bone : s.bones) {
+    bones_json.push_back(bone);
+  }
+  j = json({{"bones", bones_json}});
+}
+
 inline void to_json(json& j, const Annotation& a) {
   json proj_bbox_json_2D = json::array();
   json proj_bbox_json_3D = json::array();
@@ -321,7 +341,8 @@ inline void to_json(json& j, const Annotation& a) {
             {"bbox2d", a.bbox2D},
             {"bbox3d", a.bbox3D},
             {"bbox3d_in_image_space", proj_bbox_json_2D},
-            {"bbox3d_in_projection_space", proj_bbox_json_3D}});
+            {"bbox3d_in_projection_space", proj_bbox_json_3D},
+            {"skeleton", a.skeleton}});
 }
 
 inline void to_json(json& j, const GeoPoint& g) {

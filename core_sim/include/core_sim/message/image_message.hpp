@@ -42,6 +42,17 @@ struct BBox3D {
       : center(in_center), size(in_size), quaternion(in_quat) {}
 };
 
+struct Bone {
+  std::string name;
+  Vector3 position;
+  Quaternion orientation;
+  Vector2 image_position;
+};
+
+struct Skeleton {
+  std::vector<Bone> bones;
+};
+
 struct Annotation {
   std::string object_id;
   // TODO: add class label. Add to json_utils too.
@@ -49,6 +60,7 @@ struct Annotation {
   BBox3D bbox3D;
   std::vector<Vector2> bbox3d_in_image_space;
   std::vector<Vector3> bbox3d_in_projection_space;
+  Skeleton skeleton;
 
   Annotation(const std::string& in_id) : object_id(in_id) {}
   Annotation(const std::string& in_id, const BBox2D& in_bbox2d,
@@ -75,6 +87,17 @@ struct Annotation {
         bbox3D(in_bbox3d),
         bbox3d_in_image_space(in_bbox3d_in_image_space),
         bbox3d_in_projection_space(in_bbox3d_in_projection_space) {}
+  Annotation(const std::string& in_id, const BBox2D& in_bbox2d,
+             const BBox3D& in_bbox3d,
+             const std::vector<Vector2>& in_bbox3d_in_image_space,
+             const std::vector<Vector3>& in_bbox3d_in_projection_space,
+             const Skeleton& in_skeleton)
+      : object_id(in_id),
+        bbox2D(in_bbox2d),
+        bbox3D(in_bbox3d),
+        bbox3d_in_image_space(in_bbox3d_in_image_space),
+        bbox3d_in_projection_space(in_bbox3d_in_projection_space),
+        skeleton(in_skeleton) {}
 };
 
 class ImageMessage : public Message {

@@ -263,6 +263,48 @@ struct BBox3DMsgpack {
   }
 };
 
+struct BoneMsgpack {
+  std::string name;
+  Vector3Msgpack position;
+  QuaternionMsgpack orientation;
+  Vector2Msgpack image_position;
+  MSGPACK_DEFINE_MAP(name, position, orientation, image_position);
+
+  BoneMsgpack() {}
+
+  explicit BoneMsgpack(const Bone& bone)
+      : name(bone.name),
+        position(Vector3Msgpack(bone.position)),
+        orientation(QuaternionMsgpack(bone.orientation)),
+        image_position(Vector2Msgpack(bone.image_position)) {}
+
+  Bone ToBone() const {
+    return Bone{name, position.ToVector3(), orientation.ToQuaternion(),
+                image_position.ToVector2()};
+  }
+};
+
+struct SkeletonMsgpack {
+  std::vector<BoneMsgpack> bones;
+  MSGPACK_DEFINE_MAP(bones);
+
+  SkeletonMsgpack() {}
+
+  explicit SkeletonMsgpack(const Skeleton& skeleton) {
+    for (const auto& bone : skeleton.bones) {
+      bones.emplace_back(bone);
+    }
+  }
+
+  Skeleton ToSkeleton() const {
+    Skeleton skeleton;
+    for (const auto& bone : bones) {
+      skeleton.bones.emplace_back(bone.ToBone());
+    }
+    return skeleton;
+  }
+};
+
 struct AnnotationMsgpack {
   std::string object_id;
   // TODO: add class label
@@ -270,14 +312,16 @@ struct AnnotationMsgpack {
   BBox3DMsgpack bbox3d;
   std::vector<Vector2Msgpack> bbox3d_in_image_space;
   std::vector<Vector3Msgpack> bbox3d_in_projection_space;
+  SkeletonMsgpack skeleton;
   MSGPACK_DEFINE_MAP(object_id, bbox2d, bbox3d, bbox3d_in_image_space,
-                     bbox3d_in_projection_space);
+                     bbox3d_in_projection_space, skeleton);
 
   AnnotationMsgpack() {}
   explicit AnnotationMsgpack(const Annotation& a)
       : object_id(a.object_id),
         bbox3d_in_image_space(8),
-        bbox3d_in_projection_space(8) {
+        bbox3d_in_projection_space(8),
+        skeleton(SkeletonMsgpack(a.skeleton)) {
     bbox2d = BBox2DMsgpack(a.bbox2D);
     bbox3d = BBox3DMsgpack(a.bbox3D);
     std::transform(
@@ -301,7 +345,8 @@ struct AnnotationMsgpack {
                    bbox_projected_space.begin(),
                    [](Vector3Msgpack v) -> Vector3 { return v.ToVector3(); });
     return Annotation(object_id, bbox2d.ToBBox2D(), bbox3d.ToBBox3D(),
-                      bbox_image_space, bbox_projected_space);
+                      bbox_image_space, bbox_projected_space,
+                      skeleton.ToSkeleton());
   }
 };
 

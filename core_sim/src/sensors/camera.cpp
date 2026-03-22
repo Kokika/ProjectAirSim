@@ -1511,6 +1511,11 @@ void Camera::Loader::LoadAnnotationSettings(const json& json) {
         JsonUtils::GetBoolean(annotation_json, Constant::Config::enabled,
                               impl.camera_settings.annotation_settings.enabled);
 
+    impl.camera_settings.annotation_settings.skeleton_enabled =
+        JsonUtils::GetBoolean(
+            annotation_json, Constant::Config::skeleton_enabled,
+            impl.camera_settings.annotation_settings.skeleton_enabled);
+
     auto bbox2D_settings = JsonUtils::GetJsonObject(
         annotation_json, Constant::Config::bbox2D_settings);
     LoadBBoxSettings(bbox2D_settings,

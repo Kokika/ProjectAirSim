@@ -153,6 +153,7 @@ struct AnnotationSettings {
   BBoxSettings bbox2D_settings;
   BBoxSettings bbox3D_settings;
   bool enabled = false;
+  bool skeleton_enabled = false;
   bool distance_filter_enabled = false;
   float distance_filter_range = 10.0;
 };  // struct AnnotationSettings

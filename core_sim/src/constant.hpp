@@ -233,6 +233,7 @@ class Constant {
     static constexpr const char* focal_length = "focal-length";
     static constexpr const char* aperture = "aperture";
     static constexpr const char* annotation_settings = "annotation-settings";
+    static constexpr const char* skeleton_enabled = "skeleton-enabled";
     static constexpr const char* distance_filter_enabled =
         "distance-filter-enabled";
     static constexpr const char* distance_filter_range =
