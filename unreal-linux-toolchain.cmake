@@ -52,7 +52,11 @@ set(CMAKE_SYSROOT
 
 set(CMAKE_C_COMPILER   "${CMAKE_SYSROOT}/bin/clang")
 set(CMAKE_CXX_COMPILER "${CMAKE_SYSROOT}/bin/clang++")
+set(CMAKE_C_COMPILER_TARGET "x86_64-unknown-linux-gnu")
+set(CMAKE_CXX_COMPILER_TARGET "x86_64-unknown-linux-gnu")
 set(CMAKE_CXX_FLAGS "-I$ENV{UE_ROOT}/Engine/Source/ThirdParty/Unix/LibCxx/include -I$ENV{UE_ROOT}/Engine/Source/ThirdParty/Unix/LibCxx/include/c++/v1")
+set(CMAKE_C_FLAGS "-target x86_64-unknown-linux-gnu --sysroot=${CMAKE_SYSROOT}")
+set(CMAKE_CXX_FLAGS "-target x86_64-unknown-linux-gnu --sysroot=${CMAKE_SYSROOT} ${CMAKE_CXX_FLAGS}")
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
