@@ -61,6 +61,9 @@ class AUnrealScene : public AActor {
                            FOrientedBox& OutUnrealBox,
                            microsoft::projectairsim::BBox3D& OutSimBox) const;
 
+  bool GetSimSkeleton(const std::string& object_name,
+                      microsoft::projectairsim::Skeleton& OutSkeleton) const;
+
   AActor* FindActor(const std::string& object_name) const;
 
   TMap<FString, AActor*> scene_object_map;

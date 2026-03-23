@@ -1295,6 +1295,22 @@ void UUnrealCamera::GetBoundingBoxes(
     if (bIsBBoxInDetectionRange &&
         GetBoundingBoxProjections(Annotation, OrientedBox, bIsBBox3DPrecomputed,
                                   ScreenBox)) {
+      if (AnnotationSettings.skeleton_enabled) {
+        projectairsim::Skeleton Skeleton;
+        if (UnrealScene->GetSimSkeleton(ObjectID, Skeleton)) {
+          for (auto& Bone : Skeleton.bones) {
+            FVector BoneWorldPos = UnrealTransform::NedToUnrealLinear(Bone.position);
+            FVector2D ScreenPos;
+            FVector ProjectedPos;
+            if (ProjectPoint(BoneWorldPos, ScreenPos, ProjectedPos)) {
+              Bone.image_position =
+                  projectairsim::Vector2(ScreenPos.X, ScreenPos.Y);
+            }
+          }
+          Annotation.skeleton = Skeleton;
+        }
+      }
+
       OutAnnotations.push_back(
           Annotation);  // this will also exclude out-of-frustum 3D bboxes
     }

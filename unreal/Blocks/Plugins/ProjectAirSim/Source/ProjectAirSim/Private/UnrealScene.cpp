@@ -6,6 +6,7 @@
 #include "UnrealScene.h"
 
 #include "CineCameraActor.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DrawDebugHelpers.h"
@@ -604,6 +605,45 @@ bool AUnrealScene::GetSimBoundingBox3D(
   //             FVector(OutBox.ExtentX, OutBox.ExtentY, OutBox.ExtentZ),
   //             BoxRotation.Quaternion(),
   //             FColor::Blue);
+
+  return true;
+}
+
+bool AUnrealScene::GetSimSkeleton(
+    const std::string& object_name, projectairsim::Skeleton& OutSkeleton) const {
+  AActor* actor = world_api->FindActor(object_name);
+  if (!actor) {
+    return false;
+  }
+
+  TArray<USkeletalMeshComponent*> SkeletalMeshComponents;
+  actor->GetComponents<USkeletalMeshComponent>(SkeletalMeshComponents);
+
+  if (SkeletalMeshComponents.Num() == 0) {
+    return false;
+  }
+
+  // Use the first skeletal mesh component
+  USkeletalMeshComponent* SkeletalMeshComponent = SkeletalMeshComponents[0];
+
+  TArray<FName> BoneNames;
+  SkeletalMeshComponent->GetBoneNames(BoneNames);
+
+  for (const FName& BoneName : BoneNames) {
+    FTransform BoneTransform =
+        SkeletalMeshComponent->GetSocketTransform(BoneName, RTS_World);
+    FName ParentName = SkeletalMeshComponent->GetParentBone(BoneName);
+
+    projectairsim::Bone SimBone;
+    SimBone.name = TCHAR_TO_UTF8(*BoneName.ToString());
+    SimBone.parent_name = TCHAR_TO_UTF8(*ParentName.ToString());
+    SimBone.position =
+        UnrealTransform::UnrealToNedLinear(BoneTransform.GetLocation());
+    SimBone.orientation =
+        UnrealHelpers::ToQuaternion(BoneTransform.GetRotation());
+
+    OutSkeleton.bones.push_back(SimBone);
+  }
 
   return true;
 }

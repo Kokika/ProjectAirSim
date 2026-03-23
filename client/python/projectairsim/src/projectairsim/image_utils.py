@@ -182,6 +182,7 @@ class ImageDisplay:
         win_name: str = "Image",
         resize_x: int = None,
         resize_y: int = None,
+        display_skeleton: bool = False,
     ):
         """Display the image using OpenCV HighGUI"""
 
@@ -203,6 +204,8 @@ class ImageDisplay:
                 )
                 cv2.rectangle(img_np, v1, v2, (0, 255, 0), 3)
                 # draw_bbox3D(img_np, annotation, thickness=1)
+                if display_skeleton:
+                    draw_skeleton(img_np, annotation)
 
         # Resize image if requested
         if resize_x is not None and resize_y is not None:
@@ -259,6 +262,30 @@ def draw_bbox3D(img_np, annotation, color=(0, 0, 255), thickness=3):
         cv2.line(img_np, a, b, color, thickness)
     except OverflowError as of:
         projectairsim_log().info("Overflow error. Ignoring...")
+
+
+def draw_skeleton(img_np, annotation, color=(0, 255, 255), thickness=2):
+    """Draws skeleton bones on top of a given image."""
+    if "skeleton" not in annotation or "bones" not in annotation["skeleton"]:
+        return
+
+    bones = annotation["skeleton"]["bones"]
+    bone_map = {bone["name"]: bone for bone in bones}
+
+    for bone in bones:
+        # Draw joint
+        pos = (int(bone["image_position"]["x"]), int(bone["image_position"]["y"]))
+        cv2.circle(img_np, pos, thickness + 1, color, -1)
+
+        # Draw bone to parent
+        parent_name = bone.get("parent_name")
+        if parent_name and parent_name in bone_map:
+            parent_bone = bone_map[parent_name]
+            parent_pos = (
+                int(parent_bone["image_position"]["x"]),
+                int(parent_bone["image_position"]["y"]),
+            )
+            cv2.line(img_np, pos, parent_pos, color, thickness)
 
 
 class SensorDataDisplay(object):
