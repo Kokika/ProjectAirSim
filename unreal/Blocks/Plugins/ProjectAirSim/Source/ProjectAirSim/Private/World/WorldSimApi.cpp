@@ -28,6 +28,14 @@ void WorldSimApi::RegisterServiceMethods() {
   sim_scene_->RegisterServiceMethod(list_scene_objects,
                                     list_scene_objects_handler);
 
+  auto list_scene_objects_tags =
+      projectairsim::ServiceMethod("ListObjectsTags", {"tag"});
+  auto list_scene_objects_tags_handler =
+      list_scene_objects_tags.CreateMethodHandler(
+          &WorldSimApi::listSceneObjectsTags, *this);
+  sim_scene_->RegisterServiceMethod(list_scene_objects_tags,
+                                    list_scene_objects_tags_handler);
+
   auto list_sim_assets = projectairsim::ServiceMethod("ListAssets", {"name"});
   auto list_sim_assets_handler =
       list_sim_assets.CreateMethodHandler(&WorldSimApi::listSimAssets, *this);
@@ -852,6 +860,18 @@ std::vector<std::string> WorldSimApi::listSceneObjects(
   UnrealHelpers::RunCommandOnGameThread(
       [this, &name_regex, &result]() {
         result = UnrealHelpers::ListMatchingActors(unreal_world_, name_regex);
+      },
+      true);
+  return result;
+}
+
+std::vector<std::pair<std::string, std::string>>
+WorldSimApi::listSceneObjectsTags(const std::string& tag_regex) {
+  std::vector<std::pair<std::string, std::string>> result;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &tag_regex, &result]() {
+        result =
+            UnrealHelpers::ListMatchingActorsTags(unreal_world_, tag_regex);
       },
       true);
   return result;

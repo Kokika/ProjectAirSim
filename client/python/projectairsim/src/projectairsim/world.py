@@ -365,6 +365,23 @@ class World(object):
         scene_objects_list = self.client.request(list_obj_req)
         return scene_objects_list
 
+    def list_objects_tags(self, tag_regex: str) -> List:
+        """List scene object names and matching tags matching a tag regex
+
+        Args:
+            tag_regex (str): the regex to match object tags against
+
+        Returns:
+            List[List[str, str]]: a list of [object name, tag name] pairs
+        """
+        list_obj_tags_req: Dict = {
+            "method": f"{self.parent_topic}/ListObjectsTags",
+            "params": {"tag": tag_regex},
+            "version": 1.0,
+        }
+        scene_objects_tags_list = self.client.request(list_obj_tags_req)
+        return scene_objects_tags_list
+
     def list_assets(self, name_regex: str = ".*") -> List:
         """List available static and blueprint assets matching a regex
 

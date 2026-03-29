@@ -122,6 +122,9 @@ class WorldSimApi {
   std::vector<std::string> listSceneObjects(
       const std::string& name_regex = ".*");
 
+  std::vector<std::pair<std::string, std::string>> listSceneObjectsTags(
+      const std::string& tag_regex = ".*");
+
   std::vector<std::string> listSimAssets(const std::string& name_regex = ".*");
 
   bool enableWeather(bool enable);

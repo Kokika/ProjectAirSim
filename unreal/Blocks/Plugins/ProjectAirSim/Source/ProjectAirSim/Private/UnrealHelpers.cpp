@@ -190,6 +190,29 @@ std::vector<std::string> UnrealHelpers::ListMatchingActors(
   return results;
 }
 
+std::vector<std::pair<std::string, std::string>>
+UnrealHelpers::ListMatchingActorsTags(UWorld* unreal_world,
+                                      const std::string& tag_regex) {
+  std::vector<std::pair<std::string, std::string>> results;
+  std::regex compiledRegex(tag_regex, std::regex::optimize);
+
+  for (AActor* actor :
+       FActorRange(unreal_world, EActorIteratorFlags::SkipPendingKill)) {
+    auto& tags = actor->Tags;
+    for (int32 i = 0; i < tags.Num(); ++i) {
+      auto tag_name = std::string(TCHAR_TO_UTF8(*tags[i].ToString()));
+      bool match = std::regex_match(tag_name, compiledRegex);
+      if (match) {
+        auto actor_name = std::string(TCHAR_TO_UTF8(*actor->GetName()));
+        results.push_back({actor_name, tag_name});
+        break;
+      }
+    }
+  }
+
+  return results;
+}
+
 std::vector<std::string> UnrealHelpers::ListMatchingAssets(
     UWorld* unreal_world, const std::string& name_regex,
     TMap<FString, FAssetData>& asset_map,

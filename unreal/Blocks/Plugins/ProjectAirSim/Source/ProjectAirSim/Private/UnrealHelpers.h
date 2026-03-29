@@ -105,6 +105,9 @@ class UnrealHelpers : public UBlueprintFunctionLibrary {
   static std::vector<std::string> ListMatchingActors(
       UWorld* unreal_world, const std::string& name_regex);
 
+  static std::vector<std::pair<std::string, std::string>>
+  ListMatchingActorsTags(UWorld* unreal_world, const std::string& tag_regex);
+
   static std::vector<std::string> ListMatchingAssets(
       UWorld* unreal_world, const std::string& name_regex,
       TMap<FString, FAssetData>& asset_map,
