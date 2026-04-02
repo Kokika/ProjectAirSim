@@ -13,7 +13,7 @@ import math
 import random
 
 from projectairsim import ProjectAirSimClient
-from projectairsim.types import Vector3, Quaternion, Pose, BoxAlignment
+from projectairsim.types import Vector3, Quaternion, Pose, BoxAlignment, TypedAsset
 from projectairsim.utils import (
     projectairsim_log,
     get_pitch_between_traj_points,
@@ -382,6 +382,22 @@ class World(object):
         scene_objects_tags_list = self.client.request(list_obj_tags_req)
         return scene_objects_tags_list
 
+    def get_actor_components(self, object_name: str) -> List[str]:
+        """Get the names of all components attached to a scene actor
+
+        Args:
+            object_name (str): the name of the actor
+
+        Returns:
+            List[str]: a list of component names
+        """
+        get_components_req: Dict = {
+            "method": f"{self.parent_topic}/GetActorComponents",
+            "params": {"object_name": object_name},
+            "version": 1.0,
+        }
+        return self.client.request(get_components_req)
+
     def list_assets(self, name_regex: str = ".*") -> List:
         """List available static and blueprint assets matching a regex
 
@@ -398,6 +414,134 @@ class World(object):
         }
         scene_objects_list = self.client.request(list_obj_req)
         return scene_objects_list
+
+    def list_typed_asset_path(self, folder: str, type: TypedAsset) -> List:
+        """List assets of a specific type in a folder
+
+        Args:
+            folder (str): folder to search in
+            type (TypedAsset): type of asset to list
+
+        Returns:
+            List: a list of asset paths
+        """
+        list_req: Dict = {
+            "method": f"{self.parent_topic}/ListTypedAssetPath",
+            "params": {"folder": folder, "type": type},
+            "version": 1.0,
+        }
+        return self.client.request(list_req)
+
+    def set_anim_sequence(
+        self, object_name: str, anim_path: str, loop: bool = True
+    ) -> int:
+        """Set an animation sequence for a skeletal mesh object
+
+        Args:
+            object_name (str): name of the object
+            anim_path (str): path to the animation sequence
+            loop (bool): whether to loop the animation
+
+        Returns:
+            int: the number of frames in the animation
+        """
+        set_req: Dict = {
+            "method": f"{self.parent_topic}/SetAnimSequence",
+            "params": {
+                "object_name": object_name,
+                "anim_path": anim_path,
+                "loop": loop,
+            },
+            "version": 1.0,
+        }
+        return self.client.request(set_req)
+
+    def get_anim_sequence(self, object_name: str) -> str:
+        """Get the animation sequence (currently returns actor label)
+
+        Args:
+            object_name (str): name of the object
+
+        Returns:
+            str: the label of the object
+        """
+        get_req: Dict = {
+            "method": f"{self.parent_topic}/GetAnimSequence",
+            "params": {"object_name": object_name},
+            "version": 1.0,
+        }
+        return self.client.request(get_req)
+
+    def get_object_label(self, object_name: str) -> str:
+        """Get the label of an object
+
+        Args:
+            object_name (str): name of the object
+
+        Returns:
+            str: the label of the object
+        """
+        get_req: Dict = {
+            "method": f"{self.parent_topic}/GetObjectLabel",
+            "params": {"object_name": object_name},
+            "version": 1.0,
+        }
+        return self.client.request(get_req)
+
+    def change_actor_material_skeleton(
+        self, object_name: str, actor_source_name: str
+    ) -> bool:
+        """Change the material and skeletal mesh of an object to match another object
+
+        Args:
+            object_name (str): name of the target object
+            actor_source_name (str): name of the source object
+
+        Returns:
+            bool: whether the operation was successful
+        """
+        change_req: Dict = {
+            "method": f"{self.parent_topic}/ChangeActorMaterialSkeleton",
+            "params": {
+                "object_name": object_name,
+                "actor_source_name": actor_source_name,
+            },
+            "version": 1.0,
+        }
+        return self.client.request(change_req)
+
+    def get_animation_frame_length(self, object_name: str, anim_path: str) -> float:
+        """Get the length of an animation sequence in seconds
+
+        Args:
+            object_name (str): name of the object
+            anim_path (str): path to the animation sequence
+
+        Returns:
+            float: the length of the animation in seconds
+        """
+        get_req: Dict = {
+            "method": f"{self.parent_topic}/GetAnimationFrameLength",
+            "params": {"object_name": object_name, "anim_path": anim_path},
+            "version": 1.0,
+        }
+        return self.client.request(get_req)
+
+    def get_animation_current_frame_time(self, object_name: str) -> float:
+        """Get the current frame time of the animation playing on an object
+
+        Args:
+            object_name (str): name of the object
+
+        Returns:
+            float: the current frame time in seconds
+        """
+        get_req: Dict = {
+            "method": f"{self.parent_topic}/GetAnimationCurrentFrameTime",
+            "params": {"object_name": object_name},
+            "version": 1.0,
+        }
+        return self.client.request(get_req)
 
     def get_object_pose(self, object_name: str) -> Pose:
         """Get a scene object's pose

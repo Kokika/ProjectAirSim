@@ -12,6 +12,11 @@
 #include "Renderers/ProcMeshActor.h"
 #include "Runtime/Core/Public/Async/ParallelFor.h"
 #include "WeatherLib.h"
+#include "Animation/AnimSequence.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
+#include "Materials/MaterialInstance.h"
+#include "Engine/Texture.h"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include "core_sim/actor/env_actor.hpp"
@@ -36,10 +41,69 @@ void WorldSimApi::RegisterServiceMethods() {
   sim_scene_->RegisterServiceMethod(list_scene_objects_tags,
                                     list_scene_objects_tags_handler);
 
+
+  auto get_actor_components =
+      projectairsim::ServiceMethod("GetActorComponents", {"object_name"});
+  auto get_actor_components_handler = get_actor_components.CreateMethodHandler(
+      &WorldSimApi::getActorComponents, *this);
+  sim_scene_->RegisterServiceMethod(get_actor_components,
+                                    get_actor_components_handler);
+
   auto list_sim_assets = projectairsim::ServiceMethod("ListAssets", {"name"});
   auto list_sim_assets_handler =
       list_sim_assets.CreateMethodHandler(&WorldSimApi::listSimAssets, *this);
   sim_scene_->RegisterServiceMethod(list_sim_assets, list_sim_assets_handler);
+
+  auto list_typed_asset_path =
+      projectairsim::ServiceMethod("ListTypedAssetPath", {"folder", "type"});
+  auto list_typed_asset_path_handler = list_typed_asset_path.CreateMethodHandler(
+      &WorldSimApi::listTypedAssetPath, *this);
+  sim_scene_->RegisterServiceMethod(list_typed_asset_path,
+                                    list_typed_asset_path_handler);
+
+  auto set_anim_sequence = projectairsim::ServiceMethod(
+      "SetAnimSequence", {"object_name", "anim_path", "loop"});
+  auto set_anim_sequence_handler = set_anim_sequence.CreateMethodHandler(
+      &WorldSimApi::setAnimSequence, *this);
+  sim_scene_->RegisterServiceMethod(set_anim_sequence,
+                                    set_anim_sequence_handler);
+
+  auto get_object_label =
+      projectairsim::ServiceMethod("GetObjectLabel", {"object_name"});
+  auto get_object_label_handler = get_object_label.CreateMethodHandler(
+      &WorldSimApi::getObjectLabel, *this);
+  sim_scene_->RegisterServiceMethod(get_object_label, get_object_label_handler);
+
+  auto get_anim_sequence =
+      projectairsim::ServiceMethod("GetAnimSequence", {"object_name"});
+  auto get_anim_sequence_handler = get_anim_sequence.CreateMethodHandler(
+      &WorldSimApi::getAnimSequence, *this);
+  sim_scene_->RegisterServiceMethod(get_anim_sequence,
+                                    get_anim_sequence_handler);
+
+  auto change_actor_material_skeleton = projectairsim::ServiceMethod(
+      "ChangeActorMaterialSkeleton", {"object_name", "actor_source_name"});
+  auto change_actor_material_skeleton_handler =
+      change_actor_material_skeleton.CreateMethodHandler(
+          &WorldSimApi::changeActorMaterialSkeleton, *this);
+  sim_scene_->RegisterServiceMethod(change_actor_material_skeleton,
+                                    change_actor_material_skeleton_handler);
+
+  auto get_animation_frame_length = projectairsim::ServiceMethod(
+      "GetAnimationFrameLength", {"object_name", "anim_path"});
+  auto get_animation_frame_length_handler =
+      get_animation_frame_length.CreateMethodHandler(
+          &WorldSimApi::getAnimationFrameLength, *this);
+  sim_scene_->RegisterServiceMethod(get_animation_frame_length,
+                                    get_animation_frame_length_handler);
+
+  auto get_animation_current_frame_time = projectairsim::ServiceMethod(
+      "GetAnimationCurrentFrameTime", {"object_name"});
+  auto get_animation_current_frame_time_handler =
+      get_animation_current_frame_time.CreateMethodHandler(
+          &WorldSimApi::getAnimationCurrentFrameTime, *this);
+  sim_scene_->RegisterServiceMethod(get_animation_current_frame_time,
+                                    get_animation_current_frame_time_handler);
 
   auto get_object_pose =
       projectairsim::ServiceMethod("GetObjectPose", {"object_name"});
@@ -885,6 +949,25 @@ std::vector<std::string> WorldSimApi::listSimAssets(
         result = UnrealHelpers::ListMatchingAssets(unreal_world_, name_regex,
                                                    asset_map_, blueprint_map_,
                                                    skeletal_map_);
+      },
+      true);
+  return result;
+}
+
+std::vector<std::string> WorldSimApi::getActorComponents(
+    const std::string& object_name) {
+  std::vector<std::string> result;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &result]() {
+        AActor* actor = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(object_name.c_str()), &scene_object_map_);
+        if (actor) {
+          TArray<UActorComponent*> components;
+          actor->GetComponents(components);
+          for (const auto& component : components) {
+            result.push_back(std::string(TCHAR_TO_UTF8(*component->GetName())));
+          }
+        }
       },
       true);
   return result;
@@ -1955,4 +2038,159 @@ FHitResult WorldSimApi::GetHitResult(const FVector& start, const FVector& end,
       },
       true);
   return HitInfo;
+}
+
+std::vector<std::string> WorldSimApi::listTypedAssetPath(const std::string& folder,
+                                                        TypedAsset type) {
+  std::vector<std::string> result;
+  UnrealHelpers::RunCommandOnGameThread(
+      [&result, &folder, type]() {
+        FARFilter Filter;
+        switch (type) {
+          case TypedAsset::StaticMesh:
+            Filter.ClassPaths.Add(UStaticMesh::StaticClass()->GetClassPathName());
+            break;
+          case TypedAsset::SkeletalMesh:
+            Filter.ClassPaths.Add(USkeletalMesh::StaticClass()->GetClassPathName());
+            break;
+          case TypedAsset::AnimSequence:
+            Filter.ClassPaths.Add(UAnimSequence::StaticClass()->GetClassPathName());
+            break;
+          case TypedAsset::Material:
+            Filter.ClassPaths.Add(UMaterialInstance::StaticClass()->GetClassPathName());
+            break;
+          case TypedAsset::Texture:
+            Filter.ClassPaths.Add(UTexture::StaticClass()->GetClassPathName());
+            break;
+        }
+        if (folder.size()) {
+          FString folderPath = UTF8_TO_TCHAR(folder.c_str());
+          Filter.PackagePaths.Add(*folderPath);
+          Filter.bRecursivePaths = true;
+        }
+
+        TArray<FAssetData> AssetData;
+        FAssetRegistryModule& AssetRegistryModule =
+            FModuleManager::LoadModuleChecked<FAssetRegistryModule>(
+                "AssetRegistry");
+        AssetRegistryModule.Get().GetAssets(Filter, AssetData);
+
+        for (const auto& asset : AssetData) {
+          result.push_back(
+              std::string(TCHAR_TO_UTF8(*asset.GetSoftObjectPath().ToString())));
+        }
+      },
+      true);
+  return result;
+}
+
+int WorldSimApi::setAnimSequence(const std::string& object_name,
+                                 const std::string& anim_path, bool loop) {
+  int result = 0;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &anim_path, loop, &result]() {
+        AActor* actor = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(object_name.c_str()));
+        if (actor) {
+          USkeletalMeshComponent* skeletal_component =
+              Cast<USkeletalMeshComponent>(actor->GetComponentByClass(
+                  USkeletalMeshComponent::StaticClass()));
+          if (skeletal_component) {
+            UAnimSequenceBase* anim_sequence =
+                LoadObject<UAnimSequenceBase>(nullptr, *FString(anim_path.c_str()));
+            if (anim_sequence) {
+              skeletal_component->PlayAnimation(anim_sequence, loop);
+              result = anim_sequence->GetNumberOfSampledKeys() - 1;
+            }
+          }
+        }
+      },
+      true);
+  return result;
+}
+
+std::string WorldSimApi::getAnimSequence(const std::string& object_name) {
+  return getObjectLabel(object_name);
+}
+
+std::string WorldSimApi::getObjectLabel(const std::string& object_name) {
+  std::string result;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &result]() {
+        AActor* actor = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(object_name.c_str()));
+        if (actor) {
+#if WITH_EDITOR
+          result = TCHAR_TO_UTF8(*actor->GetActorLabel());
+#else
+          result = TCHAR_TO_UTF8(*actor->GetName());
+#endif
+        }
+      },
+      true);
+  return result;
+}
+
+bool WorldSimApi::changeActorMaterialSkeleton(
+    const std::string& object_name, const std::string& actor_source_name) {
+  bool result = false;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &actor_source_name, &result]() {
+        AActor* actor = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(object_name.c_str()));
+        AActor* actor_source = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(actor_source_name.c_str()));
+        if (actor && actor_source) {
+          USkeletalMeshComponent* target =
+              Cast<USkeletalMeshComponent>(actor->GetComponentByClass(
+                  USkeletalMeshComponent::StaticClass()));
+          USkeletalMeshComponent* source =
+              Cast<USkeletalMeshComponent>(actor_source->GetComponentByClass(
+                  USkeletalMeshComponent::StaticClass()));
+          if (target && source) {
+            for (int32 i = 0; i < source->GetNumMaterials(); ++i) {
+              target->SetMaterial(i, source->GetMaterial(i));
+            }
+            target->SetSkeletalMesh(source->SkeletalMesh);
+            result = true;
+          }
+        }
+      },
+      true);
+  return result;
+}
+
+float WorldSimApi::getAnimationFrameLength(const std::string& object_name,
+                                          const std::string& anim_path) {
+  float result = 0;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &anim_path, &result]() {
+        UAnimSequenceBase* anim_sequence =
+            LoadObject<UAnimSequenceBase>(nullptr, *FString(anim_path.c_str()));
+        if (anim_sequence) {
+          result = anim_sequence->GetPlayLength();
+        }
+      },
+      true);
+  return result;
+}
+
+float WorldSimApi::getAnimationCurrentFrameTime(
+    const std::string& object_name) {
+  float result = 0;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &result]() {
+        AActor* actor = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(object_name.c_str()));
+        if (actor) {
+          USkeletalMeshComponent* skeletal_component =
+              Cast<USkeletalMeshComponent>(actor->GetComponentByClass(
+                  USkeletalMeshComponent::StaticClass()));
+          if (skeletal_component) {
+            result = skeletal_component->GetPosition();
+          }
+        }
+      },
+      true);
+  return result;
 }

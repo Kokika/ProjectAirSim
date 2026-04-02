@@ -39,6 +39,14 @@ enum class WeatherParameter {
   Fog = 8
 };
 
+enum class TypedAsset {
+  StaticMesh = 0,
+  SkeletalMesh = 1,
+  AnimSequence = 2,
+  Material = 3,
+  Texture = 4
+};
+
 class WorldSimApi {
  public:
   WorldSimApi(UWorld* unreal_world, const std::shared_ptr<TimeOfDay>& tod,
@@ -124,6 +132,8 @@ class WorldSimApi {
 
   std::vector<std::pair<std::string, std::string>> listSceneObjectsTags(
       const std::string& tag_regex = ".*");
+
+  std::vector<std::string> getActorComponents(const std::string& object_name);
 
   std::vector<std::string> listSimAssets(const std::string& name_regex = ".*");
 
@@ -265,6 +275,24 @@ class WorldSimApi {
                               const float rotation_deg_per_sec);
 
   float GetZAtPoint(const float x, const float y);
+
+  std::vector<std::string> listTypedAssetPath(const std::string& folder,
+                                              TypedAsset type);
+
+  int setAnimSequence(const std::string& object_name,
+                      const std::string& anim_path, bool loop);
+
+  std::string getAnimSequence(const std::string& object_name);
+
+  std::string getObjectLabel(const std::string& object_name);
+
+  bool changeActorMaterialSkeleton(const std::string& object_name,
+                                   const std::string& actor_source_name);
+
+  float getAnimationFrameLength(const std::string& object_name,
+                               const std::string& anim_path);
+
+  float getAnimationCurrentFrameTime(const std::string& object_name);
 
  protected:
  private:

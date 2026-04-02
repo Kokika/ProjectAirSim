@@ -85,6 +85,23 @@ class BoxAlignment(IntEnum):
     WORLD_AXIS = 0
     OBJECT_ORIENTED = 1
 
+
+class TypedAsset(IntEnum):
+    """Asset type enum values:
+    STATIC_MESH,
+    SKELETAL_MESH,
+    ANIM_SEQUENCE,
+    MATERIAL,
+    TEXTURE
+    """
+
+    STATIC_MESH = 0
+    SKELETAL_MESH = 1
+    ANIM_SEQUENCE = 2
+    MATERIAL = 3
+    TEXTURE = 4
+
+
 class LandedState(IntEnum):
     LANDED = 0
     FLYING = 1
