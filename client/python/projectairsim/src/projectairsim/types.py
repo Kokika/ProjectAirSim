@@ -192,6 +192,31 @@ class Quaternion(AttrDict):
         self.z = quat["z"]
 
 
+class Bone(AttrDict):
+    """Class to represent a skeletal bone with its local transform
+
+    Args:
+        bone (Dict): Initial dict to construct from.
+    """
+
+    def __init__(self, bone: Dict):
+        self.name = bone["name"]
+        self.parent_name = bone["parent_name"]
+        self.position = Vector3(utils.decode(bone["position"]))
+        self.orientation = Quaternion(utils.decode(bone["orientation"]))
+
+
+class Skeleton(AttrDict):
+    """Class to represent a skeleton structure
+
+    Args:
+        skeleton (Dict): Initial dict to construct from.
+    """
+
+    def __init__(self, skeleton: Dict):
+        self.bones = [Bone(b) for b in skeleton["bones"]]
+
+
 class Color:
     """Class to represent a single RGB color value
 

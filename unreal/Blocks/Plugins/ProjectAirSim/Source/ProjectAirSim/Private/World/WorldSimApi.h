@@ -25,6 +25,7 @@
 #include "core_sim/logger.hpp"
 #include "core_sim/scene.hpp"
 #include "core_sim/service_method.hpp"
+#include "core_sim/message/image_message.hpp"
 #include "json.hpp"
 
 enum class WeatherParameter {
@@ -293,6 +294,9 @@ class WorldSimApi {
                                const std::string& anim_path);
 
   float getAnimationCurrentFrameTime(const std::string& object_name);
+
+  microsoft::projectairsim::Skeleton getSkeletalMeshBones(
+      const std::string& object_name);
 
  protected:
  private:

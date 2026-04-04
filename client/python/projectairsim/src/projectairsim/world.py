@@ -13,7 +13,7 @@ import math
 import random
 
 from projectairsim import ProjectAirSimClient
-from projectairsim.types import Vector3, Quaternion, Pose, BoxAlignment, TypedAsset
+from projectairsim.types import Vector3, Quaternion, Pose, BoxAlignment, TypedAsset, Skeleton
 from projectairsim.utils import (
     projectairsim_log,
     get_pitch_between_traj_points,
@@ -509,6 +509,23 @@ class World(object):
             "version": 1.0,
         }
         return self.client.request(change_req)
+
+    def get_skeletal_mesh_bones(self, object_name: str) -> Skeleton:
+        """Get the skeletal mesh bones for an object
+
+        Args:
+            object_name (str): the name of the object
+
+        Returns:
+            Skeleton: the skeletal mesh bones
+        """
+        get_bones_req: Dict = {
+            "method": f"{self.parent_topic}/GetSkeletalMeshBones",
+            "params": {"object_name": object_name},
+            "version": 1.0,
+        }
+        result = self.client.request(get_bones_req)
+        return Skeleton(result)
 
     def get_animation_frame_length(self, object_name: str, anim_path: str) -> float:
         """Get the length of an animation sequence in seconds
