@@ -50,6 +50,9 @@ namespace UnityProjectAirSim.World
         delegate bool SetSegmentationIDByNameDelegate(string meshName, int segId, bool isNameRegex, bool useOwnerName);
         SetSegmentationIDByNameDelegate SetSegmentationIDByNameDelegateInstance = SetSegmentationIDByName;
 
+        delegate bool RefreshSegmentationIDsDelegate();
+        RefreshSegmentationIDsDelegate RefreshSegmentationIDsDelegateInstance = RefreshSegmentationIDs;
+
         private static WorldSimApi _instance;
 
         private Dictionary<string, GameObject> _spawnedObjects;
@@ -84,6 +87,9 @@ namespace UnityProjectAirSim.World
 
             PInvokeWrapper.SetSetSegmentationIDByNameCallback(
                 Marshal.GetFunctionPointerForDelegate(SetSegmentationIDByNameDelegateInstance));
+
+            PInvokeWrapper.SetRefreshSegmentationIDsCallback(
+                Marshal.GetFunctionPointerForDelegate(RefreshSegmentationIDsDelegateInstance));
         }
 
 
@@ -213,8 +219,19 @@ namespace UnityProjectAirSim.World
         // Segmentation methods //
         public static bool SetSegmentationIDByName(string meshName, int segId, bool isNameRegex, bool useOwnerName)
         {
-            Debug.LogWarning("SetSegmentationIDByName not implemented.");
-            return false;
+            return GameThreadDispatcher.RunCommandOnGameThread(() =>
+            {
+                return CameraFiltersScript.SetSegmentationId(meshName, segId, isNameRegex);
+            }, waitForCompletion: true);
+        }
+
+        public static bool RefreshSegmentationIDs()
+        {
+            return GameThreadDispatcher.RunCommandOnGameThread(() =>
+            {
+                CameraFiltersScript.RefreshSegmentationIds();
+                return true;
+            }, waitForCompletion: true);
         }
 
         public static void Initialize()

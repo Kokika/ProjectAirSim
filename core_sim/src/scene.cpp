@@ -171,6 +171,7 @@ class Scene::Impl : public ComponentWithTopicsAndServiceMethods {
 
   bool SetWindVelocity(float v_x, float v_y, float v_z);
   Vector3 GetWindVelocity();
+  bool SimRefreshSegmentationObjects();
   void UpdateWindVelocity();
 
   std::string CallBackAfter(int t_secs);
@@ -190,6 +191,9 @@ class Scene::Impl : public ComponentWithTopicsAndServiceMethods {
   void SetCallbackEnableUnrealViewportCamera(
       const std::function<void(bool)>& callback);
 
+  void SetCallbackRefreshSegmentationObjects(
+      const std::function<bool()>& callback);
+
  private:
   friend class Scene::Loader;
 
@@ -202,6 +206,7 @@ class Scene::Impl : public ComponentWithTopicsAndServiceMethods {
   std::unordered_map<std::string, int> actor_index_by_id_;
   std::function<void(const Vector3&)> wind_velocity_updated_callback_;
   std::function<void(bool)> enable_unreal_viewport_camera_callback_;
+  std::function<bool()> refresh_segmentation_objects_callback_;
   std::function<void()> physics_start_callback_;
   std::function<void()> physics_set_wrenches_callback_;
   std::function<void(TimeNano)> physics_step_callback_;
@@ -311,6 +316,11 @@ void Scene::SetCallbackTopicPublished(
 void Scene::SetCallbackEnableUnrealViewportCamera(
     const std::function<void(bool)>& callback) {
   pimpl_->SetCallbackEnableUnrealViewportCamera(callback);
+}
+
+void Scene::SetCallbackRefreshSegmentationObjects(
+    const std::function<bool()>& callback) {
+  pimpl_->SetCallbackRefreshSegmentationObjects(callback);
 }
 
 // EnableViewportCamera
@@ -501,6 +511,18 @@ void Scene::Impl::SetCallbackTopicPublished(
 void Scene::Impl::SetCallbackEnableUnrealViewportCamera(
     const std::function<void(bool)>& callback) {
   enable_unreal_viewport_camera_callback_ = callback;
+}
+
+void Scene::Impl::SetCallbackRefreshSegmentationObjects(
+    const std::function<bool()>& callback) {
+  refresh_segmentation_objects_callback_ = callback;
+}
+
+bool Scene::Impl::SimRefreshSegmentationObjects() {
+  if (refresh_segmentation_objects_callback_ != nullptr) {
+    return refresh_segmentation_objects_callback_();
+  }
+  return false;
 }
 
 void Scene::Impl::EnableViewportCamera(bool enable) {
@@ -869,6 +891,11 @@ void Scene::Impl::RegisterServiceMethods() {
   auto get_wind_vel_handler =
       get_wind_vel.CreateMethodHandler(&Scene::Impl::GetWindVelocity, *this);
   RegisterServiceMethod(get_wind_vel, get_wind_vel_handler);
+
+  auto refresh_seg_objects = ServiceMethod("RefreshSegmentationObjects", {});
+  auto refresh_seg_objects_handler = refresh_seg_objects.CreateMethodHandler(
+      &Scene::Impl::SimRefreshSegmentationObjects, *this);
+  RegisterServiceMethod(refresh_seg_objects, refresh_seg_objects_handler);
 }
 
 void Scene::Impl::UnregisterAllServiceMethods() {

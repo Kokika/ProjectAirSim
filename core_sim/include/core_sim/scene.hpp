@@ -125,6 +125,9 @@ class Scene {
   void SetCallbackEnableUnrealViewportCamera(
       const std::function<void(bool)>& callback);
 
+  void SetCallbackRefreshSegmentationObjects(
+      const std::function<bool()>& callback);
+
  private:
   friend class Simulator;
 

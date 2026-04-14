@@ -399,6 +399,11 @@ void AUnrealScene::BeginPlay() {
     UnrealHelpers::RunCommandOnGameThread(
         [this, enable]() { EnableUnrealViewportCamera(enable); }, true);
   });
+
+  // SetCallbackRefreshSegmentationObjects
+  sim_scene->SetCallbackRefreshSegmentationObjects([this]() {
+    return this->world_api->RefreshSegmentationObjects();
+  });
 }
 
 // UnrealScene's ticks continue during Unreal pause, bTickEvenWhenPaused =

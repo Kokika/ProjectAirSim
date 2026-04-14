@@ -1447,6 +1447,10 @@ void WorldSimApi::InitSegmentationIDs() {
   const auto& seg_settings = sim_scene_->GetSegmentationSettings();
   if (seg_settings.initialize_ids == false) return;
 
+  for (TObjectIterator<UProceduralMeshComponent> comp; comp; ++comp) {
+    UnrealHelpers::InitSegmentationID(*comp, seg_settings.ignore_existing,
+                                      seg_settings.use_owner_name, seg_map_);
+  }
   for (TObjectIterator<UStaticMeshComponent> comp; comp; ++comp) {
     UnrealHelpers::InitSegmentationID(*comp, seg_settings.ignore_existing,
                                       seg_settings.use_owner_name, seg_map_);
@@ -1489,6 +1493,15 @@ int WorldSimApi::GetSegmentationIDByName(const std::string& mesh_name,
       },
       true);
   return id;
+}
+
+bool WorldSimApi::RefreshSegmentationObjects() {
+  UnrealHelpers::RunCommandOnGameThread(
+      [this]() {
+        InitSegmentationIDs();
+      },
+      true);
+  return true;
 }
 
 nlohmann::json WorldSimApi::GetSegmentationIDMap() {

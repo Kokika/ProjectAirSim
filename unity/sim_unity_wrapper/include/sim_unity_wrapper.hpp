@@ -127,6 +127,9 @@ extern "C" EXPORT void SetSetSegmentationIDByNameCallback(
     bool (*set_segmentation_id_func)(const char* mesh_name, int seg_id,
                                      bool is_name_regex, bool use_owner_name));
 
+extern "C" EXPORT void SetRefreshSegmentationIDsCallback(
+    bool (*refresh_segmentation_id_func)());
+
 //////////////////////////// End: WorldSimApi ////////////////////////////////
 
 #endif  // UNITY_SIM_UNITY_WRAPPER_SRC_SIM_UNITY_WRAPPER_HPP_

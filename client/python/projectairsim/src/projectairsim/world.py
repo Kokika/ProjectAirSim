@@ -1468,6 +1468,21 @@ class World(object):
         status = self.client.request(set_seg_id_req)
         return status
 
+    def sim_refresh_segmentation_objects(self) -> bool:
+        """Refresh the segmentation object register in the sim.
+        This is useful if new objects were spawned or enabled after the simulation started,
+        or if objects that were outside the initial FOV are not showing up in segmentation images.
+
+        Returns:
+            bool: whether the operation was successful
+        """
+        refresh_req: Dict = {
+            "method": f"{self.parent_topic}/RefreshSegmentationObjects",
+            "params": {},
+            "version": 1.0,
+        }
+        return self.client.request(refresh_req)
+
     def get_segmentation_id_by_name(self, mesh_name: str, use_owner_name: bool) -> int:
         """Get the assigned segmentation ID of an object by name
 

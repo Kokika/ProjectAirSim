@@ -730,3 +730,17 @@ void SetSetSegmentationIDByNameCallback(
       set_seg_id_method.CreateMethodHandler(set_seg_id_wrapper);
   scene.RegisterServiceMethod(set_seg_id_method, set_seg_id_handler);
 }
+
+void SetRefreshSegmentationIDsCallback(bool (*refresh_seg_id_unity)()) {
+  if (simserver == nullptr) {
+    // TODO Log warning
+    return;
+  }
+
+  std::function<bool()> refresh_seg_id_wrapper = [refresh_seg_id_unity]() {
+    return refresh_seg_id_unity();
+  };
+
+  auto& scene = simserver->GetScene();
+  scene.SetCallbackRefreshSegmentationObjects(refresh_seg_id_wrapper);
+}

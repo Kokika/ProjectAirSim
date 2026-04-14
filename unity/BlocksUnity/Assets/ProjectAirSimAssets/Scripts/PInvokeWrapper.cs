@@ -138,6 +138,9 @@ namespace UnityProjectAirSim
 
         [DllImport(DLL_NAME)]
         public static extern void SetSetSegmentationIDByNameCallback(IntPtr setSegmentationIDByNamePtr);
+
+        [DllImport(DLL_NAME)]
+        public static extern void SetRefreshSegmentationIDsCallback(IntPtr refreshSegmentationIDsPtr);
         #endregion WorldApiMethods
     }
 }

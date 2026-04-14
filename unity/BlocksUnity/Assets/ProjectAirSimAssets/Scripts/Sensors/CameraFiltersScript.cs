@@ -54,6 +54,11 @@ namespace UnityProjectAirSim.Sensors
         {
             // Initialize segmentation IDs as -1 to indicate un-set
             segmentationIds.Clear();
+            UpdateSegmentationIdsDict();
+        }
+
+        public static void UpdateSegmentationIdsDict()
+        {
             var renderers = FindObjectsOfType<Renderer>();
             foreach (var r in renderers)
             {
@@ -67,13 +72,41 @@ namespace UnityProjectAirSim.Sensors
             }
         }
 
+        public static void ApplySegmentationIds()
+        {
+            var renderers = FindObjectsOfType<Renderer>();
+            var mpb = new MaterialPropertyBlock();
+            foreach (var r in renderers)
+            {
+                int id = -1;
+                if (!segmentationIds.TryGetValue(r.gameObject.name, out id))
+                {
+                    id = r.gameObject.GetInstanceID();
+                }
+
+                var layer = r.gameObject.layer;
+
+                mpb.SetColor("_ObjectColor", ColorEncoding.EncodeIDAsColor(id));
+                mpb.SetColor("_CategoryColor", ColorEncoding.EncodeLayerAsColor(layer));
+                r.SetPropertyBlock(mpb);
+            }
+        }
+
+        public static void RefreshSegmentationIds()
+        {
+            InitializeSegmentationIdsDict();
+            ApplySegmentationIds();
+        }
+
         public static bool SetSegmentationId(string objectName, int segmentationId,
                                              bool isNameRegex)
         {
+            UpdateSegmentationIdsDict();
+
             List<string> keyList = new List<string>(segmentationIds.Keys);
+            bool isValueSet = false;
             if (isNameRegex)
             {
-                bool isValueSet = false;
                 foreach (string s in keyList)
                 {
                     // TODO Regex doesn't match for names with parentheses,
@@ -85,15 +118,22 @@ namespace UnityProjectAirSim.Sensors
                     segmentationIds[s] = segmentationId;
                     isValueSet = true;
                 }
-                return isValueSet;
+            }
+            else
+            {
+                if (segmentationIds.ContainsKey(objectName))
+                {
+                    segmentationIds[objectName] = segmentationId;
+                    isValueSet = true;
+                }
             }
 
-            if (!segmentationIds.ContainsKey(objectName))
+            if (isValueSet)
             {
-                return false;
+                ApplySegmentationIds();
             }
-            segmentationIds[objectName] = segmentationId;
-            return true;
+
+            return isValueSet;
         }
 
         public static int GetSegmentationId(string objectName)
@@ -122,18 +162,7 @@ namespace UnityProjectAirSim.Sensors
 
         private void SetSegmentationEffect(Camera camera)
         {
-            var renderers = FindObjectsOfType<Renderer>();
-            var mpb = new MaterialPropertyBlock();
-            foreach (var r in renderers)
-            {
-                var id = r.gameObject.GetInstanceID();
-                segmentationIds.TryGetValue(r.gameObject.name, out id);
-                var layer = r.gameObject.layer;
-
-                mpb.SetColor("_ObjectColor", ColorEncoding.EncodeIDAsColor(id));
-                mpb.SetColor("_CategoryColor", ColorEncoding.EncodeLayerAsColor(layer));
-                r.SetPropertyBlock(mpb);
-            }
+            ApplySegmentationIds();
 
             camera.renderingPath = RenderingPath.Forward;
             SetupCameraWithReplacementShader(camera, 0, Color.gray);

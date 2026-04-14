@@ -188,6 +188,8 @@ class WorldSimApi {
   int GetSegmentationIDByName(const std::string& mesh_name,
                               bool use_owner_name);
 
+  bool RefreshSegmentationObjects();
+
   nlohmann::json GetSegmentationIDMap();
 
   /* Server-side only */

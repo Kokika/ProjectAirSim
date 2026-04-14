@@ -184,6 +184,11 @@ class UnrealHelpers : public UBlueprintFunctionLibrary {
       return;
     }
 
+    if (seg_name_to_id.Contains(seg_name) && !ignore_existing) {
+      SetSegmentationID(mesh, seg_name_to_id[seg_name]);
+      return;
+    }
+
     // Calculate a segmentation ID from a hash for each mesh's base name chars
     int seg_id = 5;
     for (int idx = 0; idx < seg_name.Len(); ++idx) {
@@ -195,14 +200,12 @@ class UnrealHelpers : public UBlueprintFunctionLibrary {
 
     // Set object's segmentation ID if existing value isn't already enabled, or
     // the ignore_existing option is used to set everything
-    if (!seg_name_to_id.Contains(seg_name) || ignore_existing) {
-      UnrealLogger::Log(
-          microsoft::projectairsim::LogLevel::kTrace,
-          TEXT("[InitSegmentationID] seg_id: %3d, seg_name: '%s'"), seg_id,
-          *seg_name);
-      SetSegmentationID(mesh, seg_id);
-      seg_name_to_id.Add(seg_name, seg_id);
-    }
+    UnrealLogger::Log(
+        microsoft::projectairsim::LogLevel::kTrace,
+        TEXT("[InitSegmentationID] seg_id: %3d, seg_name: '%s'"), seg_id,
+        *seg_name);
+    SetSegmentationID(mesh, seg_id);
+    seg_name_to_id.Add(seg_name, seg_id);
   }
 
   static FString GetSegmentationName(UProceduralMeshComponent* mesh,
