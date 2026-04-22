@@ -13,6 +13,7 @@
 #include "Runtime/Core/Public/Async/ParallelFor.h"
 #include "WeatherLib.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Materials/MaterialInstance.h"
@@ -68,6 +69,16 @@ void WorldSimApi::RegisterServiceMethods() {
   sim_scene_->RegisterServiceMethod(set_anim_sequence,
                                     set_anim_sequence_handler);
 
+  auto set_slot_anim_sequence = projectairsim::ServiceMethod(
+      "SetSlotAnimSequence",
+      {"object_name", "anim_path", "slot_name", "blend_in_time",
+       "blend_out_time", "play_rate", "loop_count", "blend_out_trigger_time",
+       "time_to_start_montage_at"});
+  auto set_slot_anim_sequence_handler =
+      set_slot_anim_sequence.CreateMethodHandler(
+          &WorldSimApi::setSlotAnimSequence, *this);
+  sim_scene_->RegisterServiceMethod(set_slot_anim_sequence,
+                                    set_slot_anim_sequence_handler);
   auto get_object_label =
       projectairsim::ServiceMethod("GetObjectLabel", {"object_name"});
   auto get_object_label_handler = get_object_label.CreateMethodHandler(
@@ -2122,6 +2133,43 @@ int WorldSimApi::setAnimSequence(const std::string& object_name,
             if (anim_sequence) {
               skeletal_component->PlayAnimation(anim_sequence, loop);
               result = anim_sequence->GetNumberOfSampledKeys() - 1;
+            }
+          }
+        }
+      },
+      true);
+  return result;
+}
+
+bool WorldSimApi::setSlotAnimSequence(
+    const std::string& object_name, const std::string& anim_path,
+    const std::string& slot_name, float blend_in_time, float blend_out_time,
+    float play_rate, int loop_count, float blend_out_trigger_time,
+    float time_to_start_montage_at) {
+  bool result = false;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &anim_path, &slot_name, blend_in_time,
+       blend_out_time, play_rate, loop_count, blend_out_trigger_time,
+       time_to_start_montage_at, &result]() {
+        AActor* actor = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(object_name.c_str()));
+        if (actor) {
+          USkeletalMeshComponent* skeletal_component =
+              Cast<USkeletalMeshComponent>(actor->GetComponentByClass(
+                  USkeletalMeshComponent::StaticClass()));
+          if (skeletal_component) {
+            UAnimSequenceBase* anim_sequence = LoadObject<UAnimSequenceBase>(
+                nullptr, *FString(anim_path.c_str()));
+            if (anim_sequence) {
+              UAnimInstance* anim_instance =
+                  skeletal_component->GetAnimInstance();
+              if (anim_instance) {
+                anim_instance->PlaySlotAnimationAsDynamicMontage(
+                    anim_sequence, FName(slot_name.c_str()), blend_in_time,
+                    blend_out_time, play_rate, loop_count,
+                    blend_out_trigger_time, time_to_start_montage_at);
+                result = true;
+              }
             }
           }
         }

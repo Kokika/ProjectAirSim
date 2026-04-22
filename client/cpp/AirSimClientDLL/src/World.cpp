@@ -90,6 +90,15 @@ class World::Impl {
   Status HitTest(const Pose& pose, Vector3* pvec3_out);
   Status LoadScene(const json& json_scene_config,
                    float delay_after_load_sec = 0);
+  Status SetAnimSequence(const std::string& object_name,
+                         const std::string& anim_path, bool loop,
+                         int* pnum_frames);
+  Status SetSlotAnimSequence(const std::string& object_name,
+                             const std::string& anim_path,
+                             const std::string& slot_name, float blend_in_time,
+                             float blend_out_time, float play_rate,
+                             int loop_count, float blend_out_trigger_time,
+                             float time_to_start_montage_at);
   Status PlotDebugArrows(const VecVector3& points_start,
                          const VecVector3& points_end,
                          const ColorRGBA& color_rgba, float thickness,
@@ -192,6 +201,22 @@ ASC_DECL const char* World::GetParentTopic(void) const {
 
 ASC_DECL Status World::HitTest(const Pose& pose, Vector3* pvec3_out) {
   return (pimpl_->HitTest(pose, pvec3_out));
+}
+
+ASC_DECL Status World::SetAnimSequence(const std::string& object_name,
+                                       const std::string& anim_path, bool loop,
+                                       int* pnum_frames) {
+  return (pimpl_->SetAnimSequence(object_name, anim_path, loop, pnum_frames));
+}
+
+ASC_DECL Status World::SetSlotAnimSequence(
+    const std::string& object_name, const std::string& anim_path,
+    const std::string& slot_name, float blend_in_time, float blend_out_time,
+    float play_rate, int loop_count, float blend_out_trigger_time,
+    float time_to_start_montage_at) {
+  return (pimpl_->SetSlotAnimSequence(
+      object_name, anim_path, slot_name, blend_in_time, blend_out_time,
+      play_rate, loop_count, blend_out_trigger_time, time_to_start_montage_at));
 }
 
 ASC_DECL Status World::Initialize(std::shared_ptr<Client>& pclient,
@@ -1326,6 +1351,72 @@ Status World::Impl::SpawnObjectFromFileAtGeo(
 
     response_message.Deserialize(message_response);
     if (response_message.GetErrorCode() != 0) status = Status::RejectedByServer;
+  }
+
+  return (status);
+}
+
+Status World::Impl::SetAnimSequence(const std::string& object_name,
+                                    const std::string& anim_path, bool loop,
+                                    int* pnum_frames) {
+  Status status;
+  json json_params;
+  Message message_response;
+
+  json_params = {
+      {"object_name", object_name},
+      {"anim_path", anim_path},
+      {"loop", loop},
+  };
+
+  if ((status = pclient_->Request(str_parent_topic_ + "/SetAnimSequence",
+                                  json_params, &message_response)) ==
+      Status::OK) {
+    ResponseMessage response_message;
+
+    response_message.Deserialize(message_response);
+    if (response_message.GetErrorCode() == 0) {
+      if (pnum_frames) {
+        *pnum_frames = response_message.GetResult().get<int>();
+      }
+    } else {
+      status = Status::RejectedByServer;
+    }
+  }
+
+  return (status);
+}
+
+Status World::Impl::SetSlotAnimSequence(
+    const std::string& object_name, const std::string& anim_path,
+    const std::string& slot_name, float blend_in_time, float blend_out_time,
+    float play_rate, int loop_count, float blend_out_trigger_time,
+    float time_to_start_montage_at) {
+  Status status;
+  json json_params;
+  Message message_response;
+
+  json_params = {
+      {"object_name", object_name},
+      {"anim_path", anim_path},
+      {"slot_name", slot_name},
+      {"blend_in_time", blend_in_time},
+      {"blend_out_time", blend_out_time},
+      {"play_rate", play_rate},
+      {"loop_count", loop_count},
+      {"blend_out_trigger_time", blend_out_trigger_time},
+      {"time_to_start_montage_at", time_to_start_montage_at},
+  };
+
+  if ((status = pclient_->Request(str_parent_topic_ + "/SetSlotAnimSequence",
+                                  json_params, &message_response)) ==
+      Status::OK) {
+    ResponseMessage response_message;
+
+    response_message.Deserialize(message_response);
+    if (response_message.GetErrorCode() != 0) {
+      status = Status::RejectedByServer;
+    }
   }
 
   return (status);

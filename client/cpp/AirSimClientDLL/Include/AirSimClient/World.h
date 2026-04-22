@@ -144,6 +144,44 @@ class World {
   //                   if nothing was hit (NED coordinates)
   ASC_DECL Status HitTest(const Pose& pose, Vector3* pvec3_out);
 
+  // Set an animation sequence for a skeletal mesh object
+  //
+  // Arguments:
+  //   object_name   Name of the object
+  //   anim_path     Path to the animation sequence asset
+  //   loop          Whether to loop the animation
+  //   pnum_frames   Optional pointer to get the number of frames in the
+  //                 animation
+  //
+  // Returns:
+  //   (Return)      Operation status
+  ASC_DECL Status SetAnimSequence(const std::string& object_name,
+                                  const std::string& anim_path, bool loop,
+                                  int* pnum_frames = nullptr);
+
+  // Set an animation sequence for a skeletal mesh object on a slot
+  //
+  // Arguments:
+  //   object_name               Name of the object
+  //   anim_path                 Path to the animation sequence asset
+  //   slot_name                 Name of the slot
+  //   blend_in_time             Time to blend in
+  //   blend_out_time            Time to blend out
+  //   play_rate                 Play rate
+  //   loop_count                Loop count
+  //   blend_out_trigger_time    Blend out trigger time
+  //   time_to_start_montage_at  Time to start montage at
+  //
+  // Returns:
+  //   (Return)      Operation status
+  ASC_DECL Status SetSlotAnimSequence(const std::string& object_name,
+                                      const std::string& anim_path,
+                                      const std::string& slot_name,
+                                      float blend_in_time, float blend_out_time,
+                                      float play_rate, int loop_count,
+                                      float blend_out_trigger_time,
+                                      float time_to_start_montage_at);
+
  protected:
   class Impl;  // World implementation
 

@@ -456,6 +456,51 @@ class World(object):
         }
         return self.client.request(set_req)
 
+    def set_slot_anim_sequence(
+        self,
+        object_name: str,
+        anim_path: str,
+        slot_name: str = "DefaultSlot",
+        blend_in_time: float = 0.25,
+        blend_out_time: float = 0.25,
+        play_rate: float = 1.0,
+        loop_count: int = 1,
+        blend_out_trigger_time: float = -1.0,
+        time_to_start_montage_at: float = 0.0,
+    ) -> bool:
+        """Set an animation sequence for a skeletal mesh object on a slot
+
+        Args:
+            object_name (str): name of the object
+            anim_path (str): path to the animation sequence
+            slot_name (str): name of the slot
+            blend_in_time (float): time to blend in
+            blend_out_time (float): time to blend out
+            play_rate (float): play rate
+            loop_count (int): loop count
+            blend_out_trigger_time (float): blend out trigger time
+            time_to_start_montage_at (float): time to start montage at
+
+        Returns:
+            bool: whether the animation was set successfully
+        """
+        set_req: Dict = {
+            "method": f"{self.parent_topic}/SetSlotAnimSequence",
+            "params": {
+                "object_name": object_name,
+                "anim_path": anim_path,
+                "slot_name": slot_name,
+                "blend_in_time": blend_in_time,
+                "blend_out_time": blend_out_time,
+                "play_rate": play_rate,
+                "loop_count": loop_count,
+                "blend_out_trigger_time": blend_out_trigger_time,
+                "time_to_start_montage_at": time_to_start_montage_at,
+            },
+            "version": 1.0,
+        }
+        return self.client.request(set_req)
+
     def get_anim_sequence(self, object_name: str) -> str:
         """Get the animation sequence (currently returns actor label)
 

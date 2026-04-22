@@ -285,6 +285,13 @@ class WorldSimApi {
   int setAnimSequence(const std::string& object_name,
                       const std::string& anim_path, bool loop);
 
+  bool setSlotAnimSequence(const std::string& object_name,
+                           const std::string& anim_path,
+                           const std::string& slot_name, float blend_in_time,
+                           float blend_out_time, float play_rate,
+                           int loop_count, float blend_out_trigger_time,
+                           float time_to_start_montage_at);
+
   std::string getAnimSequence(const std::string& object_name);
 
   std::string getObjectLabel(const std::string& object_name);
