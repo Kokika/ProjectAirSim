@@ -1305,6 +1305,20 @@ void UUnrealCamera::GetBoundingBoxes(
             if (ProjectPoint(BoneWorldPos, ScreenPos, ProjectedPos)) {
               Bone.image_position =
                   projectairsim::Vector2(ScreenPos.X, ScreenPos.Y);
+
+              // Perform line trace to find hit_name for occlusion check on client side
+              FHitResult HitResult;
+              FCollisionQueryParams Params;
+              Params.bReturnPhysicalMaterial = false;
+              Params.AddIgnoredActor(GetOwner());
+
+              if (GetWorld()->LineTraceSingleByChannel(
+                      HitResult, GetComponentLocation(), BoneWorldPos,
+                      ECC_PhysicsBody, Params)) {
+                Bone.hit_name = TCHAR_TO_UTF8(*HitResult.BoneName.ToString());
+              } else {
+                Bone.hit_name = "";
+              }
             }
           }
           Annotation.skeleton = Skeleton;

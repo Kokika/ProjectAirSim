@@ -310,6 +310,7 @@ inline void to_json(json& j, const BBox3D& bbox3D) {
 inline void to_json(json& j, const Bone& b) {
   j = json({{"name", b.name},
             {"parent_name", b.parent_name},
+            {"hit_name", b.hit_name},
             {"position",
              {{"x", b.position.x()}, {"y", b.position.y()}, {"z", b.position.z()}}},
             {"orientation",

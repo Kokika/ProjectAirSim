@@ -266,22 +266,24 @@ struct BBox3DMsgpack {
 struct BoneMsgpack {
   std::string name;
   std::string parent_name;
+  std::string hit_name;
   Vector3Msgpack position;
   QuaternionMsgpack orientation;
   Vector2Msgpack image_position;
-  MSGPACK_DEFINE_MAP(name, parent_name, position, orientation, image_position);
+  MSGPACK_DEFINE_MAP(name, parent_name, hit_name, position, orientation, image_position);
 
   BoneMsgpack() {}
 
   explicit BoneMsgpack(const Bone& bone)
       : name(bone.name),
         parent_name(bone.parent_name),
+        hit_name(bone.hit_name),
         position(Vector3Msgpack(bone.position)),
         orientation(QuaternionMsgpack(bone.orientation)),
         image_position(Vector2Msgpack(bone.image_position)) {}
 
   Bone ToBone() const {
-    return Bone{name, parent_name, position.ToVector3(),
+    return Bone{name, parent_name, hit_name, position.ToVector3(),
                 orientation.ToQuaternion(), image_position.ToVector2()};
   }
 };

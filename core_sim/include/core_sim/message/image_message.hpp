@@ -45,6 +45,7 @@ struct BBox3D {
 struct Bone {
   std::string name;
   std::string parent_name;
+  std::string hit_name;
   Vector3 position;
   Quaternion orientation;
   Vector2 image_position;
