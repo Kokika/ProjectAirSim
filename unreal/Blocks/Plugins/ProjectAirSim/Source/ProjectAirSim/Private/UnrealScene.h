@@ -62,7 +62,8 @@ class AUnrealScene : public AActor {
                            microsoft::projectairsim::BBox3D& OutSimBox) const;
 
   bool GetSimSkeleton(const std::string& object_name,
-                      microsoft::projectairsim::Skeleton& OutSkeleton) const;
+                      microsoft::projectairsim::Skeleton& OutSkeleton,
+                      TArray<FVector>& OutUnrealPositions) const;
 
   AActor* FindActor(const std::string& object_name) const;
 

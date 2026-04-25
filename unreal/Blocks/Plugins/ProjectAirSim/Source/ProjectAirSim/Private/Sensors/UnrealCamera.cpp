@@ -731,8 +731,19 @@ void UUnrealCamera::TickComponent(
   const TimeSec SimTimeElapsedSec = projectairsim::SimClock::Get()->NanosToSec(
       PoseUpdatedTimeStamp - CapturedTime);
 
-  if (SimTimeElapsedSec > CaptureIntervalSec && bHasNewState &&
-      SimCamera.IsUpdating() && !SimCamera.IsCaptureQueueFull()) {
+  bool bIsMissingCaptures = false;
+  for (int ImageTypeInt = 0; ImageTypeInt < ImageTypeCount(); ++ImageTypeInt) {
+    if (SimCamera.HasSubscribers(ImageTypeInt) &&
+        (CapturedTime < PoseUpdatedTimeStamp)) {
+      bIsMissingCaptures = true;
+      break;
+    }
+  }
+
+  if ((SimTimeElapsedSec > CaptureIntervalSec && bHasNewState &&
+       SimCamera.IsUpdating() && !SimCamera.IsCaptureQueueFull()) ||
+      (bIsMissingCaptures && SimCamera.IsUpdating() &&
+       !SimCamera.IsCaptureQueueFull())) {
     bool bCaptureIsActive = false;
 
     for (int ImageTypeInt = 0; ImageTypeInt < ImageTypeCount();
@@ -1297,8 +1308,10 @@ void UUnrealCamera::GetBoundingBoxes(
                                   ScreenBox)) {
       if (AnnotationSettings.skeleton_enabled) {
         projectairsim::Skeleton Skeleton;
-        if (UnrealScene->GetSimSkeleton(ObjectID, Skeleton)) {
-          for (auto& Bone : Skeleton.bones) {
+        TArray<FVector> UnrealPositions;
+        if (UnrealScene->GetSimSkeleton(ObjectID, Skeleton, UnrealPositions)) {
+          for (size_t i = 0; i < Skeleton.bones.size(); ++i) {
+            auto& Bone = Skeleton.bones[i];
             FVector BoneWorldPos = UnrealTransform::NedToUnrealLinear(Bone.position);
             FVector2D ScreenPos;
             FVector ProjectedPos;
@@ -1310,14 +1323,31 @@ void UUnrealCamera::GetBoundingBoxes(
               FHitResult HitResult;
               FCollisionQueryParams Params;
               Params.bReturnPhysicalMaterial = false;
-              Params.AddIgnoredActor(GetOwner());
+              Params.bTraceComplex = true;
+
+              // Ignore the root component of the owner (usually the capsule/base collision)
+              // to allow hitting the skeletal mesh physics bodies for self-occlusion
+              if (AActor* Owner = GetOwner()) {
+                if (UPrimitiveComponent* RootPrimitive =
+                        Cast<UPrimitiveComponent>(Owner->GetRootComponent())) {
+                  Params.AddIgnoredComponent(RootPrimitive);
+                }
+              }
+
+              FVector BoneUnrealPos = UnrealPositions[i];
 
               if (GetWorld()->LineTraceSingleByChannel(
-                      HitResult, GetComponentLocation(), BoneWorldPos,
+                      HitResult, GetComponentLocation(), BoneUnrealPos,
                       ECC_PhysicsBody, Params)) {
-                Bone.hit_name = TCHAR_TO_UTF8(*HitResult.BoneName.ToString());
+                if (HitResult.BoneName != NAME_None) {
+                  Bone.hit_name = TCHAR_TO_UTF8(*HitResult.BoneName.ToString());
+                } else if (HitResult.GetActor()) {
+                  Bone.hit_name = TCHAR_TO_UTF8(*HitResult.GetActor()->GetName());
+                } else {
+                  Bone.hit_name = "BLOCKED";
+                }
               } else {
-                Bone.hit_name = "";
+                Bone.hit_name = "VISIBLE";
               }
             }
           }

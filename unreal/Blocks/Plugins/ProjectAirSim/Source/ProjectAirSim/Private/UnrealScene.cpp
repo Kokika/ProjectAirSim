@@ -615,7 +615,8 @@ bool AUnrealScene::GetSimBoundingBox3D(
 }
 
 bool AUnrealScene::GetSimSkeleton(
-    const std::string& object_name, projectairsim::Skeleton& OutSkeleton) const {
+    const std::string& object_name, projectairsim::Skeleton& OutSkeleton,
+    TArray<FVector>& OutUnrealPositions) const {
   AActor* actor = world_api->FindActor(object_name);
   if (!actor) {
     return false;
@@ -648,6 +649,7 @@ bool AUnrealScene::GetSimSkeleton(
         UnrealHelpers::ToQuaternion(BoneTransform.GetRotation());
 
     OutSkeleton.bones.push_back(SimBone);
+    OutUnrealPositions.Add(BoneTransform.GetLocation());
   }
 
   return true;

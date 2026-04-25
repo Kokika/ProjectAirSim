@@ -138,6 +138,9 @@ class Camera::Impl : public SensorImpl {
   void OnSubscribed(const Topic& topic, bool is_subscribed);
   void OnSubscribed_Onnx(const Topic& topic, bool is_subscribed);
 
+  bool HasAllRequestedImages(const std::vector<int>& image_type_ids,
+                             TimeNano t_now);
+
  private:
   friend class Camera::Loader;
   friend class ImageGenerationOverride;
@@ -481,50 +484,64 @@ TimeNano Camera::Impl::GetCapturedImagesTimestamp() {
   }
 }
 
-json Camera::Impl::GetImages(std::vector<int> image_type_ids) {
-  if (image_type_ids.empty()) return json({});
-
-  json images_json = json({});
-  ImageGenerationOverride image_generation_override(this,
-                                                    image_type_ids.size());
-  auto sleep_interval_ns =
-      static_cast<int>(camera_settings.capture_interval * 1.0e9f);
-  TimeNano t_now;
-  std::chrono::steady_clock::time_point t_start;
-
-  // Force generation of the requested image types even though the image types
-  // are not subscribed to.  The overrides are automatically removed when
-  // the image_generation_override object goes out of scope.
-  for (const int iimage_type : image_type_ids) {
-    if (image_entries_.is_valid_index(iimage_type))
-      image_generation_override.Add(iimage_type);
+  bool Camera::Impl::HasAllRequestedImages(const std::vector<int>& image_type_ids,
+                                           TimeNano t_now) {
+    std::lock_guard<std::mutex> lock(update_lock_);
+    for (int img_type_int : image_type_ids) {
+      auto it_image =
+          captured_images.find(static_cast<ImageType>(img_type_int));
+      if (it_image == captured_images.end() ||
+          it_image->second.GetTimestamp() < t_now) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  // Wait until the captured image's timestamp is past the time at the
-  // GetImages request.
-  t_start = std::chrono::steady_clock::now();
-  t_now = SimClock::Get()->NowSimNanos();
+  json Camera::Impl::GetImages(std::vector<int> image_type_ids) {
+    if (image_type_ids.empty()) return json({});
 
-  // logger_.LogVerbose(name_,
-  //                    "[%s] Waiting to receive captured_images newer than "
-  //                    "when GetImages request was received at simtime=%ld.",
-  //                    id_.c_str(), t_now);
-  while (GetCapturedImagesTimestamp() < t_now) {
-    // Check for timeout condition
-    auto t_dur = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - t_start);
-    if (t_dur.count() > kTimeoutGetCaptures) {
-      logger_.LogError(
-          name_, "[%s] GetImages() Timeout waiting for new captured_images.",
-          id_.c_str());
-      throw Error("GetImages() Timeout waiting for new captured_images.");
+    json images_json = json({});
+    ImageGenerationOverride image_generation_override(this,
+                                                      image_type_ids.size());
+    auto sleep_interval_ns =
+        static_cast<int>(camera_settings.capture_interval * 1.0e9f);
+    TimeNano t_now;
+    std::chrono::steady_clock::time_point t_start;
+
+    // Force generation of the requested image types even though the image types
+    // are not subscribed to.  The overrides are automatically removed when
+    // the image_generation_override object goes out of scope.
+    for (const int iimage_type : image_type_ids) {
+      if (image_entries_.is_valid_index(iimage_type))
+        image_generation_override.Add(iimage_type);
     }
 
-    std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_interval_ns));
-  }
+    // Wait until the captured image's timestamp is past the time at the
+    // GetImages request.
+    t_start = std::chrono::steady_clock::now();
+    t_now = SimClock::Get()->NowSimNanos();
 
-  {
-    std::lock_guard<std::mutex> lock(update_lock_);
+    // logger_.LogVerbose(name_,
+    //                    "[%s] Waiting to receive captured_images newer than "
+    //                    "when GetImages request was received at simtime=%ld.",
+    //                    id_.c_str(), t_now);
+    while (!HasAllRequestedImages(image_type_ids, t_now)) {
+      // Check for timeout condition
+      auto t_dur = std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now() - t_start);
+      if (t_dur.count() > kTimeoutGetCaptures) {
+        logger_.LogError(
+            name_, "[%s] GetImages() Timeout waiting for new captured_images.",
+            id_.c_str());
+        throw Error("GetImages() Timeout waiting for new captured_images.");
+      }
+
+      std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_interval_ns));
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(update_lock_);
 
     for (const int img_type_int : image_type_ids) {
       auto it_image =
