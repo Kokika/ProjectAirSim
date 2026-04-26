@@ -675,9 +675,10 @@ void UUnrealCamera::BeginPlay() {
         CameraSetting.capture_settings.at(ImageTypeInt);
 
     if (CaptureSetting.capture_enabled) {
-      CaptureRequests.push_back(ImageRequest(SimCamera.GetId(), ImageTypeEnum,
-                                             CaptureSetting.pixels_as_float,
-                                             CaptureSetting.compress));
+      CaptureRequests.push_back(
+          ImageRequest(SimCamera.GetId(), ImageTypeEnum,
+                       CaptureSetting.pixels_as_float, CaptureSetting.compress,
+                       CaptureSetting.force_synchronous_capture));
       SetCameraTypeEnabled(ImageTypeEnum, true);
       bAnyCaptureEnabled = true;
 
@@ -772,7 +773,13 @@ void UUnrealCamera::TickComponent(
       }
 
       if (bEnable) {
-        Capture->CaptureSceneDeferred();
+        if (SimCamera.GetCameraSettings()
+                .capture_settings.at(ImageTypeInt)
+                .force_synchronous_capture) {
+          Capture->CaptureScene();
+        } else {
+          Capture->CaptureSceneDeferred();
+        }
         bCaptureIsActive = true;
       }
     }

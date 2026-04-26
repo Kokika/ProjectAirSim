@@ -184,6 +184,8 @@ class Constant {
     static constexpr const char* fov_degrees = "fov-degrees";
     static constexpr const char* pixels_as_float = "pixels-as-float";
     static constexpr const char* compress = "compress";
+    static constexpr const char* force_synchronous_capture =
+        "force-synchronous-capture";
     static constexpr const char* auto_exposure_method = "auto-exposure-method";
     static constexpr const char* auto_exposure_speed = "auto-exposure-speed";
     static constexpr const char* auto_exposure_bias = "auto-exposure-bias";

@@ -83,6 +83,7 @@ struct CaptureSettings {
   float fov_degrees = std::numeric_limits<float>::quiet_NaN();  //  90.0f
   bool pixels_as_float = false;
   bool compress = true;
+  bool force_synchronous_capture = false;
 
   int auto_exposure_method = static_cast<int>(ExposureMethod::kHistogram);
   float auto_exposure_speed =

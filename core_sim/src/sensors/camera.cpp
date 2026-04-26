@@ -1312,6 +1312,9 @@ void Camera::Loader::LoadCaptureSetting(const json& json) {
       json, Constant::Config::pixels_as_float, setting.pixels_as_float);
   setting.compress =
       JsonUtils::GetBoolean(json, Constant::Config::compress, setting.compress);
+  setting.force_synchronous_capture =
+      JsonUtils::GetBoolean(json, Constant::Config::force_synchronous_capture,
+                            setting.force_synchronous_capture);
 
   setting.auto_exposure_method =
       JsonUtils::GetInteger(json, Constant::Config::auto_exposure_method,

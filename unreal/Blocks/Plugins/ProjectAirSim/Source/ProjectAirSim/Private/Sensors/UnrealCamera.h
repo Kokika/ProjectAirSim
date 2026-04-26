@@ -38,16 +38,19 @@ struct ImageRequest {
       microsoft::projectairsim::ImageType::kScene;
   bool bPixelsAsFloat = false;
   bool bCompress = true;
+  bool bForceSynchronousCapture = false;
 
   ImageRequest() {}
 
   ImageRequest(const std::string& CameraNameVal,
                microsoft::projectairsim::ImageType ImageTypeVal,
-               bool bPixelsAsFloatVal = false, bool bCompressVal = true) {
+               bool bPixelsAsFloatVal = false, bool bCompressVal = true,
+               bool bForceSynchronousCaptureVal = false) {
     CameraName = CameraNameVal;
     ImageType = ImageTypeVal;
     bPixelsAsFloat = bPixelsAsFloatVal;
     bCompress = bCompressVal;
+    bForceSynchronousCapture = bForceSynchronousCaptureVal;
   }
 };
 
