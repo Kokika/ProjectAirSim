@@ -47,7 +47,7 @@ struct Bone {
   std::string parent_name;
   std::string hit_name;
   Vector3 position;
-  Quaternion orientation;
+  Vector3 rotation;
   Vector2 image_position;
 };
 

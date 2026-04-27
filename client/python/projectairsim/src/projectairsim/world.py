@@ -555,18 +555,19 @@ class World(object):
         }
         return self.client.request(change_req)
 
-    def get_skeletal_mesh_bones(self, object_name: str) -> Skeleton:
+    def get_skeletal_mesh_bones(self, object_name: str, rel_pos: bool = False) -> Skeleton:
         """Get the skeletal mesh bones for an object
 
         Args:
             object_name (str): the name of the object
+            rel_pos (bool): whether to get the bones in relative or absolute coordinates
 
         Returns:
             Skeleton: the skeletal mesh bones
         """
         get_bones_req: Dict = {
             "method": f"{self.parent_topic}/GetSkeletalMeshBones",
-            "params": {"object_name": object_name},
+            "params": {"object_name": object_name, "rel_pos": rel_pos},
             "version": 1.0,
         }
         result = self.client.request(get_bones_req)

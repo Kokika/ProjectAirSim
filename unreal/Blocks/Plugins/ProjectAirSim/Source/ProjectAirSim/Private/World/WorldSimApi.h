@@ -305,7 +305,7 @@ class WorldSimApi {
   float getAnimationCurrentFrameTime(const std::string& object_name);
 
   microsoft::projectairsim::Skeleton getSkeletalMeshBones(
-      const std::string& object_name);
+      const std::string& object_name, bool rel_pos = false);
 
  protected:
  private:

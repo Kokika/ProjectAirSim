@@ -1,4 +1,4 @@
-// Copyright (C) Microsoft Corporation.  
+// Copyright (C) Microsoft Corporation.
 // Copyright (C) 2025 IAMAI CONSULTING CORP
 //
 // MIT License. All rights reserved.
@@ -116,8 +116,8 @@ void WorldSimApi::RegisterServiceMethods() {
   sim_scene_->RegisterServiceMethod(get_animation_current_frame_time,
                                     get_animation_current_frame_time_handler);
 
-  auto get_skeletal_mesh_bones =
-      projectairsim::ServiceMethod("GetSkeletalMeshBones", {"object_name"});
+  auto get_skeletal_mesh_bones = projectairsim::ServiceMethod(
+      "GetSkeletalMeshBones", {"object_name", "rel_pos"});
   auto get_skeletal_mesh_bones_handler =
       get_skeletal_mesh_bones.CreateMethodHandler(
           &WorldSimApi::getSkeletalMeshBones, *this);
@@ -2265,10 +2265,10 @@ float WorldSimApi::getAnimationCurrentFrameTime(
 }
 
 microsoft::projectairsim::Skeleton WorldSimApi::getSkeletalMeshBones(
-    const std::string& object_name) {
+    const std::string& object_name, bool rel_pos) {
   microsoft::projectairsim::Skeleton result;
   UnrealHelpers::RunCommandOnGameThread(
-      [this, &object_name, &result]() {
+      [this, &object_name, rel_pos, &result]() {
         AActor* actor = UnrealHelpers::FindActor<AActor>(
             unreal_world_, FString(object_name.c_str()), &scene_object_map_);
         if (actor) {
@@ -2283,8 +2283,23 @@ microsoft::projectairsim::Skeleton WorldSimApi::getSkeletalMeshBones(
 
               for (int32 i = 0; i < num_bones; ++i) {
                 int32 parent_idx = ref_skeleton.GetParentIndex(i);
-                FVector pos = skeletal_component->GetBoneMatrix(i).GetOrigin();
-                FQuat rot = skeletal_component->GetBoneMatrix(i).ToQuat();
+
+                FTransform BoneTransform = skeletal_component->GetBoneTransform(i);
+                if (rel_pos) {
+                  if (parent_idx != INDEX_NONE) {
+                    FTransform ParentTransform =
+                        skeletal_component->GetBoneTransform(parent_idx);
+                    BoneTransform =
+                        BoneTransform.GetRelativeTransform(ParentTransform);
+                  } else {
+                    BoneTransform = BoneTransform.GetRelativeTransform(
+                        skeletal_component->GetComponentTransform());
+                  }
+                }
+
+                FVector pos = BoneTransform.GetLocation();
+                FQuat rot = BoneTransform.GetRotation();
+                FRotator rot_unreal = rot.Rotator();
 
                 FName bone_name = ref_skeleton.GetBoneName(i);
                 FName parent_name = (parent_idx != INDEX_NONE)
@@ -2296,11 +2311,15 @@ microsoft::projectairsim::Skeleton WorldSimApi::getSkeletalMeshBones(
                 sim_bone.parent_name = TCHAR_TO_UTF8(*parent_name.ToString());
 
                 // Convert to meters and local NED (from local NEU)
-                sim_bone.position = microsoft::projectairsim::Vector3(
-                    pos.X * 0.01f, pos.Y * 0.01f, -pos.Z * 0.01f);
-                sim_bone.orientation =
-                    microsoft::projectairsim::TransformUtils::NeuToNedQuat(
-                        UnrealHelpers::ToQuaternion(rot));
+                sim_bone.position = UnrealTransform::UnrealToNedLinear(pos);
+
+                // Convert Unreal rotation to Euler (Radians, NED)
+                // We use FRotator components directly to match Unreal's animation values
+                // but apply the NED reflection (Roll=-Roll, Pitch=-Pitch, Yaw=Yaw)
+                sim_bone.rotation = microsoft::projectairsim::Vector3(
+                    FMath::DegreesToRadians(-rot_unreal.Roll),
+                    FMath::DegreesToRadians(-rot_unreal.Pitch),
+                    FMath::DegreesToRadians(rot_unreal.Yaw));
 
                 result.bones.push_back(sim_bone);
               }

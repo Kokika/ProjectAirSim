@@ -312,12 +312,13 @@ inline void to_json(json& j, const Bone& b) {
             {"parent_name", b.parent_name},
             {"hit_name", b.hit_name},
             {"position",
-             {{"x", b.position.x()}, {"y", b.position.y()}, {"z", b.position.z()}}},
-            {"orientation",
-             {{"w", b.orientation.w()},
-              {"x", b.orientation.x()},
-              {"y", b.orientation.y()},
-              {"z", b.orientation.z()}}},
+             {{"x", b.position.x()},
+              {"y", b.position.y()},
+              {"z", b.position.z()}}},
+            {"rotation",
+             {{"x", b.rotation.x()},
+              {"y", b.rotation.y()},
+              {"z", b.rotation.z()}}},
             {"image_position", {{"x", b.image_position.x()}, {"y", b.image_position.y()}}}});
 }
 

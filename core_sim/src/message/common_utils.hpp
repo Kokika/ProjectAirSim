@@ -268,9 +268,9 @@ struct BoneMsgpack {
   std::string parent_name;
   std::string hit_name;
   Vector3Msgpack position;
-  QuaternionMsgpack orientation;
+  Vector3Msgpack rotation;
   Vector2Msgpack image_position;
-  MSGPACK_DEFINE_MAP(name, parent_name, hit_name, position, orientation, image_position);
+  MSGPACK_DEFINE_MAP(name, parent_name, hit_name, position, rotation, image_position);
 
   BoneMsgpack() {}
 
@@ -279,12 +279,12 @@ struct BoneMsgpack {
         parent_name(bone.parent_name),
         hit_name(bone.hit_name),
         position(Vector3Msgpack(bone.position)),
-        orientation(QuaternionMsgpack(bone.orientation)),
+        rotation(Vector3Msgpack(bone.rotation)),
         image_position(Vector2Msgpack(bone.image_position)) {}
 
   Bone ToBone() const {
     return Bone{name, parent_name, hit_name, position.ToVector3(),
-                orientation.ToQuaternion(), image_position.ToVector2()};
+                rotation.ToVector3(), image_position.ToVector2()};
   }
 };
 

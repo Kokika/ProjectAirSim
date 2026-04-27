@@ -30,6 +30,14 @@ class UnrealTransform {
     return vec_unreal;
   }
 
+  static microsoft::projectairsim::Vector3 UnrealToNedRotation(
+      const FQuat& rot_unreal) {
+    microsoft::projectairsim::Quaternion rotation_ned =
+        microsoft::projectairsim::TransformUtils::NeuToNedQuat(
+            UnrealHelpers::ToQuaternion(rot_unreal));
+    return microsoft::projectairsim::TransformUtils::ToRPY(rotation_ned);
+  }
+
   static microsoft::projectairsim::Transform ToGlobalNed(
       const FTransform& transform_neu) {
     microsoft::projectairsim::Vector3 position_ned =

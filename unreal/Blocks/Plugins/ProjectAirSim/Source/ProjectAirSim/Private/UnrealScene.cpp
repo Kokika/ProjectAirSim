@@ -1,4 +1,4 @@
-// Copyright (C) Microsoft Corporation.  
+// Copyright (C) Microsoft Corporation.
 // Copyright (C) 2025 IAMAI CONSULTING CORP
 //
 // MIT License. All rights reserved.
@@ -616,7 +616,7 @@ bool AUnrealScene::GetSimBoundingBox3D(
 
 bool AUnrealScene::GetSimSkeleton(
     const std::string& object_name, projectairsim::Skeleton& OutSkeleton,
-    TArray<FVector>& OutUnrealPositions) const {
+    TArray<FVector>& OutUnrealPositions, bool bRelative) const {
   AActor* actor = world_api->FindActor(object_name);
   if (!actor) {
     return false;
@@ -636,8 +636,8 @@ bool AUnrealScene::GetSimSkeleton(
   SkeletalMeshComponent->GetBoneNames(BoneNames);
 
   for (const FName& BoneName : BoneNames) {
-    FTransform BoneTransform =
-        SkeletalMeshComponent->GetSocketTransform(BoneName, RTS_World);
+    FTransform BoneTransform = SkeletalMeshComponent->GetSocketTransform(
+        BoneName, bRelative ? RTS_ParentBoneSpace : RTS_World);
     FName ParentName = SkeletalMeshComponent->GetParentBone(BoneName);
 
     projectairsim::Bone SimBone;
@@ -645,11 +645,13 @@ bool AUnrealScene::GetSimSkeleton(
     SimBone.parent_name = TCHAR_TO_UTF8(*ParentName.ToString());
     SimBone.position =
         UnrealTransform::UnrealToNedLinear(BoneTransform.GetLocation());
-    SimBone.orientation =
-        UnrealHelpers::ToQuaternion(BoneTransform.GetRotation());
+
+    // Convert Unreal rotation to Euler (Degrees)
+    FRotator BoneRotator = BoneTransform.GetRotation().Rotator();
+    SimBone.rotation = projectairsim::Vector3(BoneRotator.Roll, BoneRotator.Yaw, BoneRotator.Pitch);
 
     OutSkeleton.bones.push_back(SimBone);
-    OutUnrealPositions.Add(BoneTransform.GetLocation());
+    OutUnrealPositions.Add(SkeletalMeshComponent->GetSocketLocation(BoneName));
   }
 
   return true;

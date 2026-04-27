@@ -203,7 +203,7 @@ class Bone(AttrDict):
         self.name = bone["name"]
         self.parent_name = bone["parent_name"]
         self.position = Vector3(utils.decode(bone["position"]))
-        self.orientation = Quaternion(utils.decode(bone["orientation"]))
+        self.rotation = Vector3(utils.decode(bone["rotation"]))
 
 
 class Skeleton(AttrDict):
