@@ -2275,55 +2275,7 @@ microsoft::projectairsim::Skeleton WorldSimApi::getSkeletalMeshBones(
           USkeletalMeshComponent* skeletal_component =
               actor->FindComponentByClass<USkeletalMeshComponent>();
           if (skeletal_component) {
-            USkeletalMesh* skeletal_mesh = skeletal_component->SkeletalMesh;
-            if (skeletal_mesh) {
-              const FReferenceSkeleton& ref_skeleton =
-                  skeletal_mesh->GetRefSkeleton();
-              int32 num_bones = ref_skeleton.GetNum();
-
-              for (int32 i = 0; i < num_bones; ++i) {
-                int32 parent_idx = ref_skeleton.GetParentIndex(i);
-
-                FTransform BoneTransform = skeletal_component->GetBoneTransform(i);
-                if (rel_pos) {
-                  if (parent_idx != INDEX_NONE) {
-                    FTransform ParentTransform =
-                        skeletal_component->GetBoneTransform(parent_idx);
-                    BoneTransform =
-                        BoneTransform.GetRelativeTransform(ParentTransform);
-                  } else {
-                    BoneTransform = BoneTransform.GetRelativeTransform(
-                        skeletal_component->GetComponentTransform());
-                  }
-                }
-
-                FVector pos = BoneTransform.GetLocation();
-                FQuat rot = BoneTransform.GetRotation();
-                FRotator rot_unreal = rot.Rotator();
-
-                FName bone_name = ref_skeleton.GetBoneName(i);
-                FName parent_name = (parent_idx != INDEX_NONE)
-                                        ? ref_skeleton.GetBoneName(parent_idx)
-                                        : NAME_None;
-
-                microsoft::projectairsim::Bone sim_bone;
-                sim_bone.name = TCHAR_TO_UTF8(*bone_name.ToString());
-                sim_bone.parent_name = TCHAR_TO_UTF8(*parent_name.ToString());
-
-                // Convert to meters and local NED (from local NEU)
-                sim_bone.position = UnrealTransform::UnrealToNedLinear(pos);
-
-                // Convert Unreal rotation to Euler (Radians, NED)
-                // We use FRotator components directly to match Unreal's animation values
-                // but apply the NED reflection (Roll=-Roll, Pitch=-Pitch, Yaw=Yaw)
-                sim_bone.rotation = microsoft::projectairsim::Vector3(
-                    FMath::DegreesToRadians(-rot_unreal.Roll),
-                    FMath::DegreesToRadians(-rot_unreal.Pitch),
-                    FMath::DegreesToRadians(rot_unreal.Yaw));
-
-                result.bones.push_back(sim_bone);
-              }
-            }
+            result = UnrealHelpers::GetSkeleton(skeletal_component, rel_pos);
           }
         }
       },

@@ -631,26 +631,11 @@ bool AUnrealScene::GetSimSkeleton(
 
   // Use the first skeletal mesh component
   USkeletalMeshComponent* SkeletalMeshComponent = SkeletalMeshComponents[0];
+  OutSkeleton = UnrealHelpers::GetSkeleton(SkeletalMeshComponent, bRelative);
 
   TArray<FName> BoneNames;
   SkeletalMeshComponent->GetBoneNames(BoneNames);
-
   for (const FName& BoneName : BoneNames) {
-    FTransform BoneTransform = SkeletalMeshComponent->GetSocketTransform(
-        BoneName, bRelative ? RTS_ParentBoneSpace : RTS_World);
-    FName ParentName = SkeletalMeshComponent->GetParentBone(BoneName);
-
-    projectairsim::Bone SimBone;
-    SimBone.name = TCHAR_TO_UTF8(*BoneName.ToString());
-    SimBone.parent_name = TCHAR_TO_UTF8(*ParentName.ToString());
-    SimBone.position =
-        UnrealTransform::UnrealToNedLinear(BoneTransform.GetLocation());
-
-    // Convert Unreal rotation to Euler (Degrees)
-    FRotator BoneRotator = BoneTransform.GetRotation().Rotator();
-    SimBone.rotation = projectairsim::Vector3(BoneRotator.Roll, BoneRotator.Yaw, BoneRotator.Pitch);
-
-    OutSkeleton.bones.push_back(SimBone);
     OutUnrealPositions.Add(SkeletalMeshComponent->GetSocketLocation(BoneName));
   }
 

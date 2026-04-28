@@ -31,6 +31,7 @@
 #include "Runtime/Engine/Classes/Engine/StaticMesh.h"
 #include "UnrealLogger.h"
 #include "core_sim/transforms/transform_utils.hpp"
+#include "core_sim/message/image_message.hpp"
 #include "ProceduralMeshComponent.h"
 
 // comment so that generated.h is always the last include file with clang-format
@@ -146,6 +147,9 @@ class UnrealHelpers : public UBlueprintFunctionLibrary {
 
   static bool GenerateBlueprintRegistryMap(
       TMap<FString, FAssetData>& blueprint_map);
+
+  static microsoft::projectairsim::Skeleton GetSkeleton(
+      USkeletalMeshComponent* skeletal_mesh_component, bool bRelative = false);
 
   static bool GenerateSkeletalMeshRegistryMap(
       TMap<FString, FAssetData>& skeletal_mesh_map);

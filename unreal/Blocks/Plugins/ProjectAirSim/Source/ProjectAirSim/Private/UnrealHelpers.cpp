@@ -345,6 +345,61 @@ FQuat UnrealHelpers::ToFQuat(const projectairsim::Quaternion& quat) {
   return FQuat(quat.x(), quat.y(), quat.z(), quat.w());
 }
 
+microsoft::projectairsim::Skeleton UnrealHelpers::GetSkeleton(
+    USkeletalMeshComponent* skeletal_mesh_component, bool bRelative) {
+  microsoft::projectairsim::Skeleton result;
+  if (!skeletal_mesh_component || !skeletal_mesh_component->SkeletalMesh) {
+    return result;
+  }
+
+  const FReferenceSkeleton& ref_skeleton =
+      skeletal_mesh_component->SkeletalMesh->GetRefSkeleton();
+  int32 num_bones = ref_skeleton.GetNum();
+
+  for (int32 i = 0; i < num_bones; ++i) {
+    FName bone_name = ref_skeleton.GetBoneName(i);
+    int32 parent_idx = ref_skeleton.GetParentIndex(i);
+    FName parent_name = (parent_idx != INDEX_NONE)
+                            ? ref_skeleton.GetBoneName(parent_idx)
+                            : NAME_None;
+
+    FTransform BoneTransform = skeletal_mesh_component->GetBoneTransform(i);
+    if (bRelative) {
+      if (parent_idx != INDEX_NONE) {
+        FTransform ParentTransform =
+            skeletal_mesh_component->GetBoneTransform(parent_idx);
+        BoneTransform = BoneTransform.GetRelativeTransform(ParentTransform);
+      } else {
+        BoneTransform = BoneTransform.GetRelativeTransform(
+            skeletal_mesh_component->GetComponentTransform());
+      }
+    }
+
+    FVector pos = BoneTransform.GetLocation();
+    FQuat rot = BoneTransform.GetRotation();
+    FRotator rot_unreal = rot.Rotator();
+
+    microsoft::projectairsim::Bone sim_bone;
+    sim_bone.name = TCHAR_TO_UTF8(*bone_name.ToString());
+    sim_bone.parent_name = TCHAR_TO_UTF8(*parent_name.ToString());
+
+    // Convert to meters and local NED (from local NEU)
+    sim_bone.position = UnrealTransform::UnrealToNedLinear(pos);
+
+    // Convert Unreal rotation to Euler (Radians, NED)
+    // We use FRotator components directly to match Unreal's animation values
+    // but apply the NED reflection (Roll=-Roll, Pitch=-Pitch, Yaw=Yaw)
+    sim_bone.rotation = microsoft::projectairsim::Vector3(
+        FMath::DegreesToRadians(-rot_unreal.Roll),
+        FMath::DegreesToRadians(-rot_unreal.Pitch),
+        FMath::DegreesToRadians(rot_unreal.Yaw));
+
+    result.bones.push_back(sim_bone);
+  }
+
+  return result;
+}
+
 FTransform UnrealHelpers::ToFTransform(
     const microsoft::projectairsim::Affine3& affine3) {
   const auto& mat = affine3.matrix();
