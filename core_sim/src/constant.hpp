@@ -175,6 +175,7 @@ class Constant {
     static constexpr const char* camera = "camera";
     static constexpr const char* capture_interval = "capture-interval";
     static constexpr const char* capture_settings = "capture-settings";
+    static constexpr const char* copy_from = "copy-from";
     static constexpr const char* image_type = "image-type";
     static constexpr const char* capture_enabled = "capture-enabled";
     static constexpr const char* streaming_enabled = "streaming-enabled";

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "component.hpp"
@@ -76,11 +77,41 @@ class SensorImpl : public ComponentWithTopicsAndServiceMethods {
     }
 
     try {
+      // Pre-process sensors for "copy-from" support
+      std::unordered_map<std::string, json> sensor_lib;
+      for (auto& s_json : sensors_json) {
+        if (s_json.contains(Constant::Config::id)) {
+          sensor_lib[s_json[Constant::Config::id]] = s_json;
+        }
+      }
+
+      std::vector<json> expanded_sensors;
+      for (auto& s_json : sensors_json) {
+        json final_s_json = s_json;
+        if (s_json.contains(Constant::Config::copy_from)) {
+          std::string base_id = s_json[Constant::Config::copy_from];
+          if (sensor_lib.count(base_id)) {
+            json merged_json = sensor_lib[base_id];
+            // Merge current values into base (current takes precedence)
+            merged_json.update(final_s_json);
+            final_s_json = merged_json;
+            final_s_json.erase(Constant::Config::copy_from);
+          } else {
+            actor_logger.LogWarning(
+                actor_name,
+                "[%s] 'copy-from' target '%s' not found for sensor.",
+                actor_id.c_str(), base_id.c_str());
+          }
+        }
+        expanded_sensors.push_back(final_s_json);
+      }
+
       std::transform(
-          sensors_json.begin(), sensors_json.end(), std::back_inserter(sensors),
+          expanded_sensors.begin(), expanded_sensors.end(),
+          std::back_inserter(sensors),
           [&actor_logger, &actor_name, &actor_id, &topic_manager,
-           &parent_topic_path, &service_manager, &state_manager](auto& json) {
-            return LoadSensor(json, actor_logger, actor_name, actor_id,
+           &parent_topic_path, &service_manager, &state_manager](auto& s_json) {
+            return LoadSensor(s_json, actor_logger, actor_name, actor_id,
                               topic_manager, parent_topic_path, service_manager,
                               state_manager);
           });

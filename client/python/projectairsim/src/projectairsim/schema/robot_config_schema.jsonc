@@ -134,13 +134,18 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [ "id", "type", "enabled", "parent-link" ],
+        "required": [ "id" ],
+        "anyOf": [
+          { "required": [ "type", "enabled", "parent-link" ] },
+          { "required": [ "copy-from" ] }
+        ],
         "properties": {
           "id": { "type": "string" },
           "type": {
             "type": "string",
             "enum": [ "camera", "imu", "lidar", "distance-sensor", "gps", "barometer", "magnetometer", "radar", "airspeed", "battery" ]
           },
+          "copy-from": { "type": "string" },
           //Common Params
           "enabled": { "type": "boolean" },
           "parent-link": { "type": "string" },
@@ -789,7 +794,8 @@
     "camera-required": { //make camera-settings required for camera
       "anyOf": [
         { "not": { "$ref": "#/definitions/is-camera" } },
-        { "required": [ "capture-interval", "capture-settings", "origin" ] }
+        { "required": [ "capture-interval", "capture-settings", "origin" ] },
+        { "required": [ "copy-from" ] }
       ]
     },
     "is-battery": {
@@ -801,7 +807,8 @@
     "battery-required": { //make one of battery-settings required for batter
       "anyOf": [
         { "not": { "$ref": "#/definitions/is-battery" } },
-        { "required": [ "battery-mode", "total-battery-capacity", "battery-capacity-on-start" ] }
+        { "required": [ "battery-mode", "total-battery-capacity", "battery-capacity-on-start" ] },
+        { "required": [ "copy-from" ] }
       ]
     },
     "is-simple-discharge-mode": {
@@ -813,7 +820,8 @@
     "simple-discharge-required": {
       "anyOf": [
         { "not": { "$ref": "#/definitions/is-simple-discharge-mode" } },
-        { "required": [ "battery-drain-rate-on-start" ] }
+        { "required": [ "battery-drain-rate-on-start" ] },
+        { "required": [ "copy-from" ] }
       ]
     },
     "is-IMU": {
@@ -825,7 +833,8 @@
     "imu-required": { //make imu-settings required for imu
       "anyOf": [
         { "not": { "$ref": "#/definitions/is-IMU" } },
-        { "required": [ "accelerometer", "gyroscope" ] }
+        { "required": [ "accelerometer", "gyroscope" ] },
+        { "required": [ "copy-from" ] }
       ]
     },
     "is-lidar": {
@@ -876,7 +885,8 @@
             },
             { "$ref": "#/definitions/lidar-required-generic-cylindrical" }
           ]
-        }
+        },
+        { "required": [ "copy-from" ] }
       ]
     },
     "is-radar": {
@@ -902,7 +912,8 @@
             "origin",
             "masks"
           ]
-        }
+        },
+        { "required": [ "copy-from" ] }
       ]
     },
     "is-use-tcp": {
