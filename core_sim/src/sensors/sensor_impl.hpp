@@ -15,6 +15,7 @@
 #include "component.hpp"
 #include "constant.hpp"
 #include "core_sim/error.hpp"
+#include "core_sim/json_utils.hpp"
 #include "core_sim/sensors/airspeed.hpp"
 #include "core_sim/sensors/barometer.hpp"
 #include "core_sim/sensors/battery.hpp"
@@ -78,20 +79,20 @@ class SensorImpl : public ComponentWithTopicsAndServiceMethods {
 
     try {
       // Pre-process sensors for "copy-from" support
-      std::unordered_map<std::string, json> sensor_lib;
+      std::unordered_map<std::string, microsoft::projectairsim::json> sensor_lib;
       for (auto& s_json : sensors_json) {
         if (s_json.contains(Constant::Config::id)) {
-          sensor_lib[s_json[Constant::Config::id]] = s_json;
+          sensor_lib[s_json[Constant::Config::id].get<std::string>()] = s_json;
         }
       }
 
-      std::vector<json> expanded_sensors;
+      std::vector<microsoft::projectairsim::json> expanded_sensors;
       for (auto& s_json : sensors_json) {
-        json final_s_json = s_json;
+        microsoft::projectairsim::json final_s_json = s_json;
         if (s_json.contains(Constant::Config::copy_from)) {
           std::string base_id = s_json[Constant::Config::copy_from];
           if (sensor_lib.count(base_id)) {
-            json merged_json = sensor_lib[base_id];
+            microsoft::projectairsim::json merged_json = sensor_lib[base_id];
             // Merge current values into base (current takes precedence)
             merged_json.update(final_s_json);
             final_s_json = merged_json;
