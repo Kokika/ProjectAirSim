@@ -1,9 +1,10 @@
-// Copyright (C) Microsoft Corporation.  
+// Copyright (C) Microsoft Corporation.
 // Copyright (C) 2025 IAMAI CONSULTING CORP
 //
 // MIT License. All rights reserved.
 
 #include "UnrealHelpers.h"
+#include "UnrealTransforms.h"
 
 #include "Engine/Engine.h"
 #include "Engine/SkeletalMesh.h"
@@ -348,12 +349,12 @@ FQuat UnrealHelpers::ToFQuat(const projectairsim::Quaternion& quat) {
 microsoft::projectairsim::Skeleton UnrealHelpers::GetSkeleton(
     USkeletalMeshComponent* skeletal_mesh_component, bool bRelative) {
   microsoft::projectairsim::Skeleton result;
-  if (!skeletal_mesh_component || !skeletal_mesh_component->SkeletalMesh) {
+  if (!skeletal_mesh_component || !skeletal_mesh_component->GetSkeletalMeshAsset()) {
     return result;
   }
 
   const FReferenceSkeleton& ref_skeleton =
-      skeletal_mesh_component->SkeletalMesh->GetRefSkeleton();
+      skeletal_mesh_component->GetSkeletalMeshAsset()->GetRefSkeleton();
   int32 num_bones = ref_skeleton.GetNum();
 
   for (int32 i = 0; i < num_bones; ++i) {

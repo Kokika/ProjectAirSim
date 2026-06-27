@@ -1107,7 +1107,7 @@ T* WorldSimApi::createNewSkeletalActor(
     USkeletalMeshComponent* ObjectComponent =
         NewObject<USkeletalMeshComponent>(NewActor);
     if (skeletal_mesh) {
-      ObjectComponent->SetSkeletalMesh(skeletal_mesh);
+      ObjectComponent->SetSkeletalMeshAsset(skeletal_mesh);
       ObjectComponent->SetRelativeLocation(FVector(0, 0, 0));
       ObjectComponent->SetWorldScale3D(
           FVector(scale.at(0), scale.at(1), scale.at(2)));
@@ -2220,7 +2220,7 @@ bool WorldSimApi::changeActorMaterialSkeleton(
             for (int32 i = 0; i < source->GetNumMaterials(); ++i) {
               target->SetMaterial(i, source->GetMaterial(i));
             }
-            target->SetSkeletalMesh(source->SkeletalMesh);
+            target->SetSkeletalMeshAsset(source->GetSkeletalMeshAsset());
             result = true;
           }
         }
