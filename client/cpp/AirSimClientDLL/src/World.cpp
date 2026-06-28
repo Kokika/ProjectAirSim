@@ -99,6 +99,8 @@ class World::Impl {
                              float blend_out_time, float play_rate,
                              int loop_count, float blend_out_trigger_time,
                              float time_to_start_montage_at);
+  Status ChangeActorMaterialSkeleton(const std::string& object_name,
+                                     const std::string& actor_source_name);
   Status PlotDebugArrows(const VecVector3& points_start,
                          const VecVector3& points_end,
                          const ColorRGBA& color_rgba, float thickness,
@@ -217,6 +219,11 @@ ASC_DECL Status World::SetSlotAnimSequence(
   return (pimpl_->SetSlotAnimSequence(
       object_name, anim_path, slot_name, blend_in_time, blend_out_time,
       play_rate, loop_count, blend_out_trigger_time, time_to_start_montage_at));
+}
+
+ASC_DECL Status World::ChangeActorMaterialSkeleton(
+    const std::string& object_name, const std::string& actor_source_name) {
+  return (pimpl_->ChangeActorMaterialSkeleton(object_name, actor_source_name));
 }
 
 ASC_DECL Status World::Initialize(std::shared_ptr<Client>& pclient,
@@ -1409,6 +1416,31 @@ Status World::Impl::SetSlotAnimSequence(
   };
 
   if ((status = pclient_->Request(str_parent_topic_ + "/SetSlotAnimSequence",
+                                  json_params, &message_response)) ==
+      Status::OK) {
+    ResponseMessage response_message;
+
+    response_message.Deserialize(message_response);
+    if (response_message.GetErrorCode() != 0) {
+      status = Status::RejectedByServer;
+    }
+  }
+
+  return (status);
+}
+
+Status World::Impl::ChangeActorMaterialSkeleton(
+    const std::string& object_name, const std::string& actor_source_name) {
+  Status status;
+  json json_params;
+  Message message_response;
+
+  json_params = {
+      {"object_name", object_name},
+      {"actor_source_name", actor_source_name},
+  };
+
+  if ((status = pclient_->Request(str_parent_topic_ + "/ChangeActorMaterialSkeleton",
                                   json_params, &message_response)) ==
       Status::OK) {
     ResponseMessage response_message;

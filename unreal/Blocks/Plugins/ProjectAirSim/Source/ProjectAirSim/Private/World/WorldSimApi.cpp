@@ -2206,9 +2206,9 @@ bool WorldSimApi::changeActorMaterialSkeleton(
   UnrealHelpers::RunCommandOnGameThread(
       [this, &object_name, &actor_source_name, &result]() {
         AActor* actor = UnrealHelpers::FindActor<AActor>(
-            unreal_world_, FString(object_name.c_str()));
+            unreal_world_, FString(object_name.c_str()), &scene_object_map_);
         AActor* actor_source = UnrealHelpers::FindActor<AActor>(
-            unreal_world_, FString(actor_source_name.c_str()));
+            unreal_world_, FString(actor_source_name.c_str()), &scene_object_map_);
         if (actor && actor_source) {
           USkeletalMeshComponent* target =
               Cast<USkeletalMeshComponent>(actor->GetComponentByClass(
@@ -2217,10 +2217,15 @@ bool WorldSimApi::changeActorMaterialSkeleton(
               Cast<USkeletalMeshComponent>(actor_source->GetComponentByClass(
                   USkeletalMeshComponent::StaticClass()));
           if (target && source) {
-            for (int32 i = 0; i < source->GetNumMaterials(); ++i) {
-              target->SetMaterial(i, source->GetMaterial(i));
-            }
             target->SetSkeletalMeshAsset(source->GetSkeletalMeshAsset());
+            target->SetPhysicsAsset(source->GetPhysicsAsset());
+            int32 MaterialCount = source->GetNumMaterials();
+            for (int32 i = 0; i < MaterialCount; ++i) {
+              UMaterialInterface* material = source->GetMaterial(i);
+              if (material) {
+                target->SetMaterial(i, material);
+              }
+            }
             result = true;
           }
         }

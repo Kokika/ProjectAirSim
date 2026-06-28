@@ -182,6 +182,17 @@ class World {
                                       float blend_out_trigger_time,
                                       float time_to_start_montage_at);
 
+  // Change the material and skeletal mesh of an actor to match another actor
+  //
+  // Arguments:
+  //   object_name        Name of the target object
+  //   actor_source_name  Name of the source object
+  //
+  // Returns:
+  //   (Return)           Operation status
+  ASC_DECL Status ChangeActorMaterialSkeleton(const std::string& object_name,
+                                              const std::string& actor_source_name);
+
  protected:
   class Impl;  // World implementation
 
