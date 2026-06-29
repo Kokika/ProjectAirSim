@@ -1282,13 +1282,26 @@ void UUnrealCamera::GetBoundingBoxes(
     return;
   }
 
+  std::unordered_set<std::string> TargetObjectIDs = AnnotationSettings.object_ids;
+
+  // Resolve object tags using UnrealHelpers
+  UWorld* World = GetWorld();
+  if (World) {
+    for (const std::string& Tag : AnnotationSettings.object_tags) {
+      auto TagMatches = UnrealHelpers::ListMatchingActorsTags(World, Tag);
+      for (const auto& Match : TagMatches) {
+        TargetObjectIDs.insert(Match.first);
+      }
+    }
+  }
+
   auto RenderTarget = RenderTargets[projectairsim::MathUtils::ToNumeric(
       projectairsim::ImageType::kScene)];
   auto ScreenBox = projectairsim::Box2f(
       projectairsim::Vector2(0.0, 0.0),
       projectairsim::Vector2(RenderTarget->SizeX, RenderTarget->SizeY));
 
-  for (auto& ObjectID : AnnotationSettings.object_ids) {
+  for (const auto& ObjectID : TargetObjectIDs) {
     auto Annotation = projectairsim::Annotation(ObjectID);
     FOrientedBox OrientedBox;
     auto bIsBBox3DPrecomputed = UnrealScene->GetSimBoundingBox3D(

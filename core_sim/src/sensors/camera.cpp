@@ -1515,17 +1515,29 @@ void Camera::Loader::LoadAnnotationSettings(const json& json) {
   } else {
     auto object_ids_json = JsonUtils::GetArray(
         annotation_json, Constant::Config::object_ids,
-        impl.camera_settings.annotation_settings.object_ids);
+        "[ ]"_json);
 
-    if (JsonUtils::IsEmptyArray(object_ids_json)) {
+    auto object_tags_json = JsonUtils::GetArray(
+        annotation_json, Constant::Config::object_tags,
+        "[ ]"_json);
+
+    if (JsonUtils::IsEmptyArray(object_ids_json) && JsonUtils::IsEmptyArray(object_tags_json)) {
       impl.logger_.LogWarning(impl.name_,
-                              "[%s] 'bbox2d-object-ids' missing or empty.",
+                              "[%s] both 'object-ids' and 'object-tags' are missing or empty.",
                               impl.id_.c_str());
       return;
     }
 
-    impl.camera_settings.annotation_settings.object_ids.insert(
-        object_ids_json.begin(), object_ids_json.end());
+    if (!JsonUtils::IsEmptyArray(object_ids_json)) {
+      impl.camera_settings.annotation_settings.object_ids.insert(
+          object_ids_json.begin(), object_ids_json.end());
+    }
+
+    if (!JsonUtils::IsEmptyArray(object_tags_json)) {
+      for (const auto& tag : object_tags_json) {
+        impl.camera_settings.annotation_settings.object_tags.push_back(tag.get<std::string>());
+      }
+    }
 
     impl.camera_settings.annotation_settings.enabled =
         JsonUtils::GetBoolean(annotation_json, Constant::Config::enabled,

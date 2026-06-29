@@ -242,6 +242,7 @@ class Constant {
     static constexpr const char* distance_filter_range =
         "distance-filter-range";
     static constexpr const char* object_ids = "object-ids";
+    static constexpr const char* object_tags = "object-tags";
     static constexpr const char* bbox2D_settings = "bbox2D-settings";
     static constexpr const char* bbox3D_settings = "bbox3D-settings";
     static constexpr const char* alignment = "alignment";

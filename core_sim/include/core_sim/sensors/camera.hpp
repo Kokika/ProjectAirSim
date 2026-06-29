@@ -151,6 +151,7 @@ struct BBoxSettings {
 
 struct AnnotationSettings {
   std::unordered_set<std::string> object_ids;
+  std::vector<std::string> object_tags;
   BBoxSettings bbox2D_settings;
   BBoxSettings bbox3D_settings;
   bool enabled = false;
