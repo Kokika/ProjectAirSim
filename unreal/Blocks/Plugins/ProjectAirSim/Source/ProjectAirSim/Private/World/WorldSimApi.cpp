@@ -2226,6 +2226,8 @@ bool WorldSimApi::changeActorMaterialSkeleton(
                 target->SetMaterial(i, material);
               }
             }
+            target->SetSkinnedAssetAndUpdate(source->GetSkinnedAsset());
+            target->SetAnimInstanceClass(source->GetAnimInstance()->GetClass());
             result = true;
           }
         }
