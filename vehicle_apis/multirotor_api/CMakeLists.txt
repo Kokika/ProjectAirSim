@@ -19,4 +19,6 @@
 add_subdirectory(src)
 
 # Add multirotor_api unit tests
-# add_subdirectory(test)
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()

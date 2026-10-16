@@ -7,6 +7,12 @@ using namespace projectairsim::rendering::scene;
 
 // Todo add GLTFDataProvider tests
 
-TEST(GLTFDataProvider, Constructor) {}
+TEST(GLTFDataProvider, Constructor) {
+	// General description:
+	// Verifies constructor for GLTFDataProvider.
+	// Arrange: prepare context for `}`.
+	// Act: run `}`.
+	// Assert: check result from `}`.
+}
 
 SCENE_END_NAMESPACE

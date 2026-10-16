@@ -39,18 +39,21 @@ Edit your [robot config](../../config_robot.md#px4_settings) file and add the `l
   "local-host-ip": "www.xxx.yyy.zzz",
   "control-ip-address": "remote",
   "control-port-remote": 14580,
+  "control-port-local": 14580,
   "qgc-host-ip": "", //Set only when enabling GCS proxy
   "qgc-port": 14550, //Set only when enabling GCS proxy
   "parameters": {
     "NAV_RCL_ACT": 0,
     "NAV_DLL_ACT": 0,
-    "COM_OBL_ACT": 1,
+    "COM_OBL_RC_ACT": 1,
     "LPE_LAT": 47.641468,
     "LPE_LON": -122.140165
   },
   ...
 }
 ```
+
+**Note:** check the example script "px4_quadrotor.py" for WSL2 configuration. Use the scene "sitl_wsl2" when running ProjectAirsim with PX4.
 
 Usually Lockstep mode is enabled for PX4 SITL.  See [PX4 Lockstep Mode](px4_lockstep.md) for more information.
 

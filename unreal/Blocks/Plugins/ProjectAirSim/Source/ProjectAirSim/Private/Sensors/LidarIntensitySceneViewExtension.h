@@ -43,14 +43,21 @@ class FLidarIntensitySceneViewExtension : public FSceneViewExtensionBase {
   END_SHADER_PARAMETER_STRUCT()
 
 public:
-  std::vector<FVector4> LidarPointCloudData;
+  // Must be the float (16-byte) variant — UE5's FVector4 is TVector4<double>
+  // (32 bytes), which mismatches the 16-byte-per-point layout the compute
+  // shader writes and would cause silent stride misalignment.
+  std::vector<FVector4f> LidarPointCloudData;
+  TimeNano LidarPointCloudTime = 0;
+  microsoft::projectairsim::Pose LidarPointCloudPose;
+  bool bHasUnreadLidarPointCloudData = false;
 
 private:
-  static const int32 NumReadbackBuffers = 4;
-  TUniquePtr<FRHIGPUBufferReadback> ReadbackBuffers[NumReadbackBuffers];
-  uint32 ReadbackBuffersSizes[NumReadbackBuffers];
-  int32 CurrentReadbackIndex = 0;
-  
   std::queue<FLidarPointCloudCSParameters> CSParamsQ;
   TWeakObjectPtr<UTextureRenderTarget2D> RenderTarget2D;
+
+  static constexpr int NumReadbackBuffers = 2;
+  TUniquePtr<FRHIGPUBufferReadback> ReadbackBuffers[NumReadbackBuffers];
+  uint32 ReadbackBuffersSizes[NumReadbackBuffers] = {};
+  FLidarPointCloudCSParameters ReadbackMetadata[NumReadbackBuffers];
+  int CurrentReadbackIndex = 0;
 };

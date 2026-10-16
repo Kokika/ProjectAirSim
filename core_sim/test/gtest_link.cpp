@@ -36,10 +36,18 @@ namespace projectairsim = microsoft::projectairsim;
 using json = nlohmann::json;
 
 TEST(Link, Constructor) {
+  // General description:
+  // Verifies constructor for Link.
+  // Arrange: prepare context for `EXPECT_FALSE(projectairsim::Robot::MakeLink().IsLoaded());`.
+  // Act: run `EXPECT_FALSE(projectairsim::Robot::MakeLink().IsLoaded());`.
+  // Assert: check result from `EXPECT_FALSE(projectairsim::Robot::MakeLink().IsLoaded());`.
   EXPECT_FALSE(projectairsim::Robot::MakeLink().IsLoaded());
 }
 
 TEST(Link, Load) {
+  // General description:
+  // Verifies load for Link.
+  // Arrange: prepare context for `json json =`.
   json json =
       "{ \
             \"name\": \"a\", \
@@ -52,10 +60,15 @@ TEST(Link, Load) {
         }"_json;
 
   auto link = projectairsim::Robot::MakeLink();
+  // Act: run `projectairsim::Robot::LoadLink(link, json);`.
   projectairsim::Robot::LoadLink(link, json);
+  // Assert: check result from `}`.
 }
 
 TEST(Link, IsLoaded) {
+  // General description:
+  // Verifies is loaded for Link.
+  // Arrange: prepare context for `json json =`.
   json json =
       "{ \
             \"name\": \"a\", \
@@ -68,11 +81,16 @@ TEST(Link, IsLoaded) {
         }"_json;
 
   auto link = projectairsim::Robot::MakeLink();
+  // Act: run `projectairsim::Robot::LoadLink(link, json);`.
   projectairsim::Robot::LoadLink(link, json);
+  // Assert: check result from `EXPECT_TRUE(link.IsLoaded());`.
   EXPECT_TRUE(link.IsLoaded());
 }
 
 TEST(Link, GetID) {
+  // General description:
+  // Verifies get id for Link.
+  // Arrange: prepare context for `json json =`.
   json json =
       "{ \
             \"name\": \"a\", \
@@ -85,6 +103,8 @@ TEST(Link, GetID) {
         }"_json;
 
   auto link = projectairsim::Robot::MakeLink();
+  // Act: run `projectairsim::Robot::LoadLink(link, json);`.
   projectairsim::Robot::LoadLink(link, json);
+  // Assert: check result from `EXPECT_EQ(link.GetID(), "a");`.
   EXPECT_EQ(link.GetID(), "a");
 }

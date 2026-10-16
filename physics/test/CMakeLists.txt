@@ -20,9 +20,13 @@ set(TARGET_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(
     ${TARGET_NAME}
+    EXCLUDE_FROM_ALL
     gtest_physics_world.cpp
     gtest_fast_physics.cpp
     gtest_unreal_physics.cpp
+    gtest_matlab_physics.cpp
+    gtest_jsbsim_physics.cpp
+    gtest_jsbsim_ground_callback.cpp
 )
 
 set_target_properties(
@@ -33,15 +37,26 @@ set_target_properties(
 
 # Add dependency to core_sim_gtests since it copies the runtime DLLs into ${SIMLIBS_TEST_DIR}
 if(WIN32)
-    add_dependencies(${TARGET_NAME} physics core_sim core_sim_gtests nng-external gtest_main)
+    add_dependencies(${TARGET_NAME} physics core_sim core_sim_gtests nng-external jsbsim-repo gtest_main)
+elseif(APPLE)
+    add_dependencies(${TARGET_NAME} physics core_sim core_sim_gtests nng-external jsbsim-repo gtest_main)
 else()
-    add_dependencies(${TARGET_NAME} physics core_sim core_sim_gtests nng-external openssl-external gtest_main)
+    add_dependencies(${TARGET_NAME} physics core_sim core_sim_gtests nng-external jsbsim-repo openssl-external gtest_main)
 endif()
 
 # Set up nng and openssl for linking
 target_link_directories(${TARGET_NAME} PRIVATE ${NNG_LIB_DIR} ${OPENSSL_LIB_DIR})
-target_compile_definitions(${TARGET_NAME} PRIVATE NNG_STATIC_LIB=ON OPENSSL_STATIC_LIB=ON)
+target_compile_definitions(
+    ${TARGET_NAME}
+    PRIVATE
+        NNG_STATIC_LIB=ON
+        OPENSSL_STATIC_LIB=ON
+        PROJECTAIRSIM_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
 target_link_directories(${TARGET_NAME} PRIVATE ${ONNX_LIB_DIR})
+
+# Set up JSBSim for linking
+target_link_directories(${TARGET_NAME} PRIVATE ${JSBSIM_LIB_DIR})
 
 target_include_directories(
     ${TARGET_NAME}
@@ -54,6 +69,8 @@ target_include_directories(
         ${NNG_INCLUDE_DIR}
         ${MSGPACK_INCLUDE_DIR}
         ${OPENSSL_INCLUDE_DIR}
+        ${JSBSIM_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/core_sim/src/  # for core_sim private test helpers
 )
 
 if(WIN32)
@@ -64,7 +81,8 @@ target_link_libraries(
         physics
         nng
         core_sim
-        lvmon
+        jsbsim
+        $<$<BOOL:${PROJECTAIRSIM_ENABLE_LVMON}>:lvmon>
 )
 else()
 target_link_libraries(
@@ -73,9 +91,10 @@ target_link_libraries(
         gtest_main
         physics
         nng
-        crypto # Client authorization
+        ${OPENSSL_CRYPTO_LIBRARY} # Client authorization
         core_sim
-        lvmon
+        jsbsim
+        $<$<BOOL:${PROJECTAIRSIM_ENABLE_LVMON}>:lvmon>
 )
 endif()
 

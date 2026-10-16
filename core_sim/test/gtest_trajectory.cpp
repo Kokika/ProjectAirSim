@@ -71,23 +71,41 @@ namespace projectairsim = microsoft::projectairsim;
 using json = nlohmann::json;
 
 TEST(Trajectory, Constructor) {
+  // General description:
+  // Verifies constructor for Trajectory.
+  // Arrange: prepare context for `EXPECT_FALSE(projectairsim::EnvActor::MakeTrajectory().IsLoaded());`.
+  // Act: run `EXPECT_FALSE(projectairsim::EnvActor::MakeTrajectory().IsLoaded());`.
+  // Assert: check result from `EXPECT_FALSE(projectairsim::EnvActor::MakeTrajectory().IsLoaded());`.
   EXPECT_FALSE(projectairsim::EnvActor::MakeTrajectory().IsLoaded());
 }
 
 TEST(Trajectory, LoadFromConfig) {
+  // General description:
+  // Verifies load from config for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
+  // Act: run `projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);`.
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
+  // Assert: check result from `}`.
 }
 
 TEST(Trajectory, IsLoaded) {
+  // General description:
+  // Verifies is loaded for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
+  // Act: run `projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);`.
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
+  // Assert: check result from `EXPECT_TRUE(trajectory.IsLoaded());`.
   EXPECT_TRUE(trajectory.IsLoaded());
 }
 
 TEST(Trajectory, LoadFromAPI) {
+  // General description:
+  // Verifies load from api for Trajectory.
+  // Arrange: prepare context for `std::string traj_name = "test";`.
   std::string traj_name = "test";
   std::vector<float> time = {1, 3, 6, 9, 12};
   std::vector<float> x = {3, 5, 8, 14, 20};
@@ -102,20 +120,27 @@ TEST(Trajectory, LoadFromAPI) {
 
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
   projectairsim::EnvActor::LoadTrajectoryFromAPI(trajectory, traj_name, time, x,
+                                               // Act: run `y, z, roll, pitch, yaw, vel_x,`.
                                                y, z, roll, pitch, yaw, vel_x,
                                                vel_y, vel_z);
+  // Assert: check result from `EXPECT_TRUE(trajectory.IsLoaded());`.
   EXPECT_TRUE(trajectory.IsLoaded());
 }
 
 TEST(Trajectory, GetKinematicsAtFirstWaypoint) {
+  // General description:
+  // Verifies get kinematics at first waypoint for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
   TimeSec currtime = 1;
   projectairsim::TrajectoryKinematics traj_kinematics;
   traj_kinematics.traj_params.to_loop = true;
+                                          // Act: run `projectairsim::EnvActor::UpdateKinematics(trajectory, currtime,`.
   projectairsim::EnvActor::UpdateKinematics(trajectory, currtime,
                                           traj_kinematics);
+  // Assert: check result from `EXPECT_EQ(traj_kinematics.kinematics.pose.position,`.
   EXPECT_EQ(traj_kinematics.kinematics.pose.position,
             projectairsim::Vector3(3, 0, -15));
   EXPECT_EQ(traj_kinematics.kinematics.twist.linear,
@@ -123,13 +148,18 @@ TEST(Trajectory, GetKinematicsAtFirstWaypoint) {
 }
 
 TEST(Trajectory, GetKinematicsBetweenWaypoints) {
+  // General description:
+  // Verifies get kinematics between waypoints for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
   TimeSec curr_time = 7;
   projectairsim::TrajectoryKinematics traj_kinematics;
+                                          // Act: run `projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,`.
   projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,
                                           traj_kinematics);
+  // Assert: check result from `EXPECT_EQ(traj_kinematics.kinematics.pose.position,`.
   EXPECT_EQ(traj_kinematics.kinematics.pose.position,
             projectairsim::Vector3(10, 11.666667, -9));
   EXPECT_EQ(traj_kinematics.kinematics.twist.linear,
@@ -137,14 +167,19 @@ TEST(Trajectory, GetKinematicsBetweenWaypoints) {
 }
 
 TEST(Trajectory, GetKinematicsAtLastWaypoint) {
+  // General description:
+  // Verifies get kinematics at last waypoint for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
   TimeSec currtime = 12;
   projectairsim::TrajectoryKinematics traj_kinematics;
   traj_kinematics.traj_params.to_loop = true;
+                                          // Act: run `projectairsim::EnvActor::UpdateKinematics(trajectory, currtime,`.
   projectairsim::EnvActor::UpdateKinematics(trajectory, currtime,
                                           traj_kinematics);
+  // Assert: check result from `EXPECT_EQ(traj_kinematics.kinematics.pose.position,`.
   EXPECT_EQ(traj_kinematics.kinematics.pose.position,
             projectairsim::Vector3(20, 20, -4));
   EXPECT_EQ(traj_kinematics.kinematics.twist.linear,
@@ -152,6 +187,9 @@ TEST(Trajectory, GetKinematicsAtLastWaypoint) {
 }
 
 TEST(Trajectory, GetKinematicsAfterLastWayPointWithLoop) {
+  // General description:
+  // Verifies get kinematics after last way point with loop for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
@@ -159,8 +197,10 @@ TEST(Trajectory, GetKinematicsAfterLastWayPointWithLoop) {
   traj_kinematics.traj_params.to_loop = true;
   traj_kinematics.traj_params.num_loops = 1;
   TimeSec curr_time = 16;
+                                          // Act: run `projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,`.
   projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,
                                           traj_kinematics);
+  // Assert: check result from `EXPECT_EQ(traj_kinematics.kinematics.pose.position,`.
   EXPECT_EQ(traj_kinematics.kinematics.pose.position,
             projectairsim::Vector3(7, 9, -11.3333333));
   EXPECT_EQ(traj_kinematics.kinematics.twist.linear,
@@ -168,6 +208,9 @@ TEST(Trajectory, GetKinematicsAfterLastWayPointWithLoop) {
 }
 
 TEST(Trajectory, GetKinematicsAfterLastWayPointWithoutLoop) {
+  // General description:
+  // Verifies get kinematics after last way point without loop for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
@@ -177,8 +220,10 @@ TEST(Trajectory, GetKinematicsAfterLastWayPointWithoutLoop) {
   projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,
                                           traj_kinematics);
   curr_time = 17;
+                                          // Act: run `projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,`.
   projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,
                                           traj_kinematics);
+  // Assert: check result from `EXPECT_EQ(traj_kinematics.kinematics.pose.position,`.
   EXPECT_EQ(traj_kinematics.kinematics.pose.position,
             projectairsim::Vector3(20, 20, -4));
   EXPECT_EQ(traj_kinematics.kinematics.twist.linear,
@@ -186,6 +231,9 @@ TEST(Trajectory, GetKinematicsAfterLastWayPointWithoutLoop) {
 }
 
 TEST(Trajectory, GetKinematicsAtFirstWaypointWithOffset) {
+  // General description:
+  // Verifies get kinematics at first waypoint with offset for Trajectory.
+  // Arrange: prepare context for `auto json = projectairsim::EnvActor::GetScript();`.
   auto json = projectairsim::EnvActor::GetScript();
   auto trajectory = projectairsim::EnvActor::MakeTrajectory();
   projectairsim::EnvActor::LoadTrajectoryFromConfig(trajectory, json);
@@ -194,8 +242,10 @@ TEST(Trajectory, GetKinematicsAtFirstWaypointWithOffset) {
   traj_kinematics.traj_params.to_loop = true;
   traj_kinematics.traj_params.time_offset = 2;
   traj_kinematics.traj_params.x_offset = -1;
+                                          // Act: run `projectairsim::EnvActor::UpdateKinematics(trajectory, currtime,`.
   projectairsim::EnvActor::UpdateKinematics(trajectory, currtime,
                                           traj_kinematics);
+  // Assert: check result from `EXPECT_EQ(traj_kinematics.kinematics.pose.position,`.
   EXPECT_EQ(traj_kinematics.kinematics.pose.position,
             projectairsim::Vector3(2, 0, -15));
   EXPECT_EQ(traj_kinematics.kinematics.twist.linear,
@@ -203,6 +253,9 @@ TEST(Trajectory, GetKinematicsAtFirstWaypointWithOffset) {
 }
 
 TEST(Trajectory, GetKinematicsAfterLastWayPointWithLoopAndOffset) {
+  // General description:
+  // Verifies get kinematics after last way point with loop and offset for Trajectory.
+  // Arrange: prepare context for `std::string traj_name = "test";`.
   std::string traj_name = "test";
   std::vector<float> time = {1, 3, 6, 9, 12};
   std::vector<float> x = {3, 5, 8, 14, 20};
@@ -228,8 +281,10 @@ TEST(Trajectory, GetKinematicsAfterLastWayPointWithLoopAndOffset) {
   traj_kinematics.traj_params.y_offset = 1;
   traj_kinematics.traj_params.z_offset = 1;
   TimeSec curr_time = 16;
+                                          // Act: run `projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,`.
   projectairsim::EnvActor::UpdateKinematics(trajectory, curr_time,
                                           traj_kinematics);
+  // Assert: check result from `EXPECT_EQ(traj_kinematics.kinematics.pose.position,`.
   EXPECT_EQ(traj_kinematics.kinematics.pose.position,
             projectairsim::Vector3(7, 9, -11.66666667));
   EXPECT_EQ(traj_kinematics.kinematics.twist.linear,

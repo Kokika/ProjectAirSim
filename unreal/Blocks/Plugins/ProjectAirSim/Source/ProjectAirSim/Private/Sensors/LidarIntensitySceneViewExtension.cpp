@@ -17,7 +17,7 @@
 #include "SceneTextureParameters.h"
 
 // Access to FPostProcessingInputs definition from internal Renderer headers
-#if UE_IS_5_7
+#if UE_IS_5_7_OR_5_8
     #include "Runtime/Renderer/Internal/PostProcess/PostProcessInputs.h"
 #elif UE_IS_5_2
     #include "Runtime/Renderer/Private/PostProcess/PostProcessing.h"
@@ -168,7 +168,7 @@ void FLidarIntensitySceneViewExtension::PrePostProcessPass_RenderThread(
   const FScreenPassTextureViewportParameters SceneTextureViewportParams =
       GetTextureViewportParameters(SceneColorTextureViewport);
 
-#if UE_IS_5_7
+#if UE_IS_5_7_OR_5_8
   FSceneTextureShaderParameters SceneTextures =
       CreateSceneTextureShaderParameters(
           GraphBuilder, View, ESceneTextureSetupMode::All);
@@ -218,13 +218,16 @@ void FLidarIntensitySceneViewExtension::PrePostProcessPass_RenderThread(
             FScreenPassPipelineState(VertexShader, PixelShader,
                                      DefaultBlendState, DepthStencilState),
             [&](FRHICommandListImmediate& RHICmdList) {
-                #if UE_IS_5_7
-                    VertexShader->SetParameters(RHICmdList.GetScratchShaderParameters(), View);
+                #if UE_IS_5_7_OR_5_8
+                    // View UB is already bound via PostProcessMaterialParameters->View;
+                    // SetShaderParameters commits everything in one scratch batch.
+                    // Do not call VS/PS->SetParameters here — it would dirty the
+                    // scratch parameters and trip the !HasParameters() ensure on
+                    // the next GetScratchShaderParameters() call inside SetShaderParameters.
                     SetShaderParameters(RHICmdList, VertexShader,
                                         VertexShader.GetVertexShader(),
                                         *PostProcessMaterialParameters);
 
-                    PixelShader->SetParameters(RHICmdList.GetScratchShaderParameters(), View);
                     SetShaderParameters(RHICmdList, PixelShader,
                                         PixelShader.GetPixelShader(),
                                         *PostProcessMaterialParameters);
@@ -263,8 +266,11 @@ void FLidarIntensitySceneViewExtension::PrePostProcessPass_RenderThread(
           if (LidarPointCloudData.size() != NumPointsRead) {
             LidarPointCloudData.resize(NumPointsRead);
           }
-          
+
           FMemory::Memcpy(LidarPointCloudData.data(), BufferData, CurrentSize);
+          LidarPointCloudTime = ReadbackMetadata[CurrentReadbackIndex].CaptureTime;
+          LidarPointCloudPose = ReadbackMetadata[CurrentReadbackIndex].LidarPose;
+          bHasUnreadLidarPointCloudData = true;
           CurrentReadback->Unlock();
       }
   }
@@ -291,15 +297,20 @@ void FLidarIntensitySceneViewExtension::PrePostProcessPass_RenderThread(
   PassParameters->PointCloudBuffer = PointCloudBufferUAV;
   PassParameters->HorizontalResolution = cachedParams.HorizontalResolution;
   PassParameters->LaserNums = cachedParams.LaserNums;
+  PassParameters->TotalPointCount = NumPoints;
   PassParameters->LaserRange = cachedParams.LaserRange;
   PassParameters->CurrentHorizontalAngleDeg =
       cachedParams.CurrentHorizontalAngleDeg;
   PassParameters->HorizontalFOV = cachedParams.HorizontalFOV;
-  PassParameters->VerticalFOV = cachedParams.VerticalFOV;
+  // Forward the configured azimuth window so the compute pass uses the same
+  // FOV limits as the CPU-side sensor settings.
+  PassParameters->HorizontalFOVStartDeg = cachedParams.HorizontalFOVStartDeg;
+  PassParameters->HorizontalFOVEndDeg = cachedParams.HorizontalFOVEndDeg;
+  PassParameters->VerticalFOVUpperDeg = cachedParams.VerticalFOVUpperDeg;
+  PassParameters->VerticalFOVLowerDeg = cachedParams.VerticalFOVLowerDeg;
+  PassParameters->CameraHorizontalFOVDeg = cachedParams.CameraHorizontalFOVDeg;
   PassParameters->CamFrustrumHeight = cachedParams.CamFrustrumHeight;
   PassParameters->CamFrustrumWidth = cachedParams.CamFrustrumWidth;
-  PassParameters->ProjectionMatrixInv =
-      cachedParams.ViewProjectionMatInv.GetTransposed();
 
   PassParameters->CamRotationMatrix1 = cachedParams.RotationMatCam1;
   PassParameters->CamRotationMatrix2 = cachedParams.RotationMatCam2;
@@ -307,7 +318,9 @@ void FLidarIntensitySceneViewExtension::PrePostProcessPass_RenderThread(
   PassParameters->CamRotationMatrix4 = cachedParams.RotationMatCam4;
 
   PassParameters->DepthImage1 = cachedParams.DepthTexture1;
-  PassParameters->DepthImage2 = IntensityRenderTargetTexture;
+    // Each texture corresponds to one 90-degree capture used by the 360-degree
+    // GPU lidar sweep.
+    PassParameters->DepthImage2 = cachedParams.DepthTexture2;
   PassParameters->DepthImage3 = cachedParams.DepthTexture3;
   PassParameters->DepthImage4 = cachedParams.DepthTexture4;
 
@@ -324,6 +337,7 @@ void FLidarIntensitySceneViewExtension::PrePostProcessPass_RenderThread(
 
   // Store the size for the next time we encounter this buffer slot
   ReadbackBuffersSizes[CurrentReadbackIndex] = BufferSize;
+  ReadbackMetadata[CurrentReadbackIndex] = cachedParams;
 
   // Advance index for next frame
   CurrentReadbackIndex = (CurrentReadbackIndex + 1) % NumReadbackBuffers;

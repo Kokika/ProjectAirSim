@@ -83,72 +83,117 @@ using json = nlohmann::json;
 // Test suit name should follow proper naming convention (no '_' strictly)
 
 TEST(Radar, SetsRadarID) {
+  // General description:
+  // Verifies Radar::GetId mirrors the constructor-provided id and updates when
+  // rebuilt with a different id.
+  // Arrange: prepare context for `auto radar_json = projectairsim::Robot::GetBasicRadarConfig();`.
   auto radar_json = projectairsim::Robot::GetBasicRadarConfig();
+  // Arrange: prepare context for `auto id = radar_json["id"];`.
   auto id = radar_json["id"];
   const auto& is_enabled = radar_json["enabled"];
   const auto& parent_link = radar_json["parent-link"];
+  // Act: run `auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);`.
   auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.GetId(), std::string("ID123"));`.
   EXPECT_EQ(radar.GetId(), std::string("ID123"));
+  // Act: run `id = "radar123";`.
   id = "radar123";
   radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.GetId(), std::string("radar123"));`.
   EXPECT_EQ(radar.GetId(), std::string("radar123"));
 }
 
 TEST(Radar, SetsSensorType) {
+  // General description:
+  // Confirms Radar objects report sensor type kRadar.
+  // Arrange: prepare context for `auto radar_json = projectairsim::Robot::GetBasicRadarConfig();`.
   auto radar_json = projectairsim::Robot::GetBasicRadarConfig();
   auto id = radar_json["id"];
   const auto& is_enabled = radar_json["enabled"];
   const auto& parent_link = radar_json["parent-link"];
+  // Act: run `auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);`.
   auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.GetType(), projectairsim::SensorType::kRadar);`.
   EXPECT_EQ(radar.GetType(), projectairsim::SensorType::kRadar);
 }
 
 TEST(Radar, SetsIsEnabled) {
+  // General description:
+  // Verifies enabled state follows constructor input for false and true cases.
+  // Arrange: prepare context for `auto radar_json = projectairsim::Robot::GetBasicRadarConfig();`.
   auto radar_json = projectairsim::Robot::GetBasicRadarConfig();
   auto id = radar_json["id"];
   auto is_enabled = false;
   const auto& parent_link = radar_json["parent-link"];
+  // Act: run `auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);`.
   auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.IsEnabled(), false);`.
   EXPECT_EQ(radar.IsEnabled(), false);
+  // Act: run `is_enabled = true;`.
   is_enabled = true;
   radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.IsEnabled(), true);`.
   EXPECT_EQ(radar.IsEnabled(), true);
 }
 
 TEST(Radar, SetsParentLink) {
+  // General description:
+  // Verifies parent-link assignment and update behavior for Radar
+  // construction.
+  // Arrange: prepare context for `auto radar_json = projectairsim::Robot::GetBasicRadarConfig();`.
   auto radar_json = projectairsim::Robot::GetBasicRadarConfig();
   auto id = radar_json["id"];
   const auto& is_enabled = false;
   auto parent_link = radar_json["parent-link"];
+  // Act: run `auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);`.
   auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.GetParentLink(), "ParentLink");`.
   EXPECT_EQ(radar.GetParentLink(), "ParentLink");
+  // Act: run `parent_link = "ParentLink123";`.
   parent_link = "ParentLink123";
   radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.GetParentLink(), "ParentLink123");`.
   EXPECT_EQ(radar.GetParentLink(), "ParentLink123");
 }
 
 TEST(Radar, LoadsRadar) {
+  // General description:
+  // Ensures LoadRadar marks the sensor as loaded when given valid config.
+  // Arrange: prepare context for `auto radar_json = projectairsim::Robot::GetBasicRadarConfig();`.
   auto radar_json = projectairsim::Robot::GetBasicRadarConfig();
   auto id = radar_json["id"];
   const auto& is_enabled = radar_json["enabled"];
   const auto& parent_link = radar_json["parent-link"];
   auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Act: run `projectairsim::Robot::LoadRadar(radar, radar_json);`.
   projectairsim::Robot::LoadRadar(radar, radar_json);
+  // Assert: check result from `EXPECT_EQ(radar.IsLoaded(), true);`.
   EXPECT_EQ(radar.IsLoaded(), true);
 }
 
 TEST(Radar, SetsIsLoaded) {
+  // General description:
+  // Verifies IsLoaded transitions from false to true only after loading.
+  // Arrange: prepare context for `auto radar_json = projectairsim::Robot::GetBasicRadarConfig();`.
   auto radar_json = projectairsim::Robot::GetBasicRadarConfig();
   auto id = radar_json["id"];
   const auto& is_enabled = radar_json["enabled"];
   const auto& parent_link = radar_json["parent-link"];
+  // Act: run `auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);`.
   auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.IsLoaded(), false);`.
   EXPECT_EQ(radar.IsLoaded(), false);
+  // Act: run `projectairsim::Robot::LoadRadar(radar, radar_json);`.
   projectairsim::Robot::LoadRadar(radar, radar_json);
+  // Assert: check result from `EXPECT_EQ(radar.IsLoaded(), true);`.
   EXPECT_EQ(radar.IsLoaded(), true);
 }
 
 TEST(Radar, RadarSetting) {
+  // General description:
+  // Loads a full radar configuration and verifies each scalar and mask field
+  // is copied into RadarSettings.
+  // Arrange: prepare context for `json radar_json = R"({`.
   json radar_json = R"({
       "id": "ID123",
       "type": "radar",
@@ -200,11 +245,16 @@ TEST(Radar, RadarSetting) {
   auto id = radar_json["id"];
   const auto& is_enabled = radar_json["enabled"];
   const auto& parent_link = radar_json["parent-link"];
+  // Act: run `auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);`.
   auto radar = projectairsim::Robot::MakeRadar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(radar.IsLoaded(), false);`.
   EXPECT_EQ(radar.IsLoaded(), false);
+  // Act: run `projectairsim::Robot::LoadRadar(radar, radar_json);`.
   projectairsim::Robot::LoadRadar(radar, radar_json);
+  // Act: run `const auto& radar_settings = radar.GetRadarSettings();`.
   const auto& radar_settings = radar.GetRadarSettings();
 
+  // Assert: check result from `EXPECT_FLOAT_EQ(radar_settings.fov_azimuth_max, 1.11);`.
   EXPECT_FLOAT_EQ(radar_settings.fov_azimuth_max, 1.11);
   EXPECT_FLOAT_EQ(radar_settings.fov_azimuth_min, 1.12);
   EXPECT_FLOAT_EQ(radar_settings.fov_elevation_max, 2.21);
@@ -212,6 +262,7 @@ TEST(Radar, RadarSetting) {
   EXPECT_FLOAT_EQ(radar_settings.fov_azimuth_resolution, 3.3);
   EXPECT_FLOAT_EQ(radar_settings.fov_elevation_resolution, 4.4);
 
+  // Assert: check result from `EXPECT_FLOAT_EQ(radar_settings.range_max, 5.5);`.
   EXPECT_FLOAT_EQ(radar_settings.range_max, 5.5);
   EXPECT_FLOAT_EQ(radar_settings.range_resolution, 6.6);
   EXPECT_FLOAT_EQ(radar_settings.velocity_max, 7.7);
@@ -220,8 +271,10 @@ TEST(Radar, RadarSetting) {
   EXPECT_FLOAT_EQ(radar_settings.track_interval, 10.1);
   EXPECT_EQ(radar_settings.draw_debug_points, false);
 
+  // Assert: check result from `EXPECT_EQ(radar_settings.masks.size(), 2);`.
   EXPECT_EQ(radar_settings.masks.size(), 2);
 
+  // Assert: check result from `EXPECT_FLOAT_EQ(radar_settings.masks[0].azimuth_min, 0.1);`.
   EXPECT_FLOAT_EQ(radar_settings.masks[0].azimuth_min, 0.1);
   EXPECT_FLOAT_EQ(radar_settings.masks[0].azimuth_max, 0.2);
   EXPECT_FLOAT_EQ(radar_settings.masks[0].elevation_min, 0.3);
@@ -233,6 +286,7 @@ TEST(Radar, RadarSetting) {
   EXPECT_FLOAT_EQ(radar_settings.masks[0].rcs_sqm_min, 0.01);
   EXPECT_FLOAT_EQ(radar_settings.masks[0].rcs_sqm_max, 100.0);
 
+  // Assert: check result from `EXPECT_FLOAT_EQ(radar_settings.masks[1].azimuth_min, -0.1);`.
   EXPECT_FLOAT_EQ(radar_settings.masks[1].azimuth_min, -0.1);
   EXPECT_FLOAT_EQ(radar_settings.masks[1].azimuth_max, -0.2);
   EXPECT_FLOAT_EQ(radar_settings.masks[1].elevation_min, -0.3);

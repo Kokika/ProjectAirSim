@@ -1,4 +1,4 @@
-// Copyright (C) Microsoft Corporation. 
+// Copyright (C) Microsoft Corporation.
 // Copyright (C) 2025 IAMAI CONSULTING CORP
 
 // MIT License. All rights reserved.
@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <system_error>
 #include <thread>
@@ -125,6 +126,51 @@ class SteppableClock : public ClockBase {
 };
 
 // -----------------------------------------------------------------------------
+// EngineDrivenClock
+
+class EngineDrivenClock : public ClockBase {
+ public:
+  static constexpr TimeNano kMinStepNanos = 1;
+
+  explicit EngineDrivenClock(
+      TimeNano fixed_step_nanos = ClockBase::kDefaultStepNanos,
+      TimeNano start = 0);
+  ~EngineDrivenClock() override;
+
+  TimeNano NowSimNanos() const override;
+
+  // Called from an external host loop to add elapsed frame time to the
+  // accumulator.
+  void AccumulateStep(TimeNano delta_nanos);
+  void AccumulateStep(TimeSec delta_seconds);
+
+  // True when enough accumulated real time exists for at least one sim step.
+  bool HasPendingStep() const;
+
+  // Schedules one variable-duration step supplied by the host. This takes
+  // precedence over any fixed step accumulated from render-frame time.
+  void SetNextStep(TimeNano amount_nanos) override;
+
+  void SetFixedStep(TimeNano fixed_step_nanos);
+
+ protected:
+  void Step() override;
+
+ private:
+  // Current sim time is advanced in fixed steps by Step() as accumulated real
+  // time allows.
+  std::atomic<TimeNano> current_sim_time_;
+  // Fixed-step size used to convert variable frame deltas into deterministic
+  // simulation steps.
+  std::atomic<TimeNano> fixed_step_nanos_;
+  // Accumulated real time from external host frames that has not yet been
+  // consumed into sim time steps.
+  std::atomic<TimeNano> accumulated_nanos_;
+  // Optional host-provided duration for the next individual simulation tick.
+  std::atomic<TimeNano> next_step_nanos_;
+};
+
+// -----------------------------------------------------------------------------
 // SimClock
 
 class SimClock {  // TODO Avoid factory singleton pattern?
@@ -144,13 +190,21 @@ class SimClock {  // TODO Avoid factory singleton pattern?
 // -----------------------------------------------------------------------------
 // Clock Settings
 
-enum class ClockType { kSteppable = 0, kRealTime = 1 };
+enum class ClockType {
+  kSteppable = 0,
+  kRealTime = 1,
+  kEngineDriven = 2,
+  kExternalClock = 3
+};
 
 struct ClockSettings {
   ClockType type = ClockType::kSteppable;
   TimeNano step = ClockBase::kDefaultStepNanos;
   TimeNano scene_tick_period = ClockBase::kDefaultStepNanos;
   bool pause_on_start = false;
+  bool engine_substepping = false;
+  bool engine_fixed_fps_enabled = false;
+  float engine_fixed_fps = 30.0f;
 };
 
 // -----------------------------------------------------------------------------

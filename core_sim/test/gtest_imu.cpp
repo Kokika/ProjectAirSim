@@ -54,64 +54,105 @@ namespace projectairsim = microsoft::projectairsim;
 using json = nlohmann::json;
 
 TEST(Imu, SetsImuID) {
+  // General description:
+  // Validates that Imu::GetId returns the same identifier passed at
+  // construction.
+  // Arrange: prepare context for `const auto imu_json = projectairsim::Robot::GetBasicImuConfig();`.
   const auto imu_json = projectairsim::Robot::GetBasicImuConfig();
+  // Arrange: prepare context for `const auto& id = imu_json["id"];`.
   const auto& id = imu_json["id"];
   const auto& is_enabled = imu_json["enabled"];
   const auto& parent_link = imu_json["parent-link"];
+  // Act: run `auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);`.
   auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(imu.GetId(), std::string("IMU123"));`.
   EXPECT_EQ(imu.GetId(), std::string("IMU123"));
 }
 
 TEST(Imu, SetsSensorType) {
+  // General description:
+  // Confirms IMU instances report sensor type kImu.
+  // Arrange: prepare context for `const auto imu_json = projectairsim::Robot::GetBasicImuConfig();`.
   const auto imu_json = projectairsim::Robot::GetBasicImuConfig();
   const auto& id = imu_json["id"];
   const auto& is_enabled = imu_json["enabled"];
   const auto& parent_link = imu_json["parent-link"];
+  // Act: run `auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);`.
   auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(imu.GetType(), projectairsim::SensorType::kImu);`.
   EXPECT_EQ(imu.GetType(), projectairsim::SensorType::kImu);
 }
 
 TEST(Imu, SetsIsEnabled) {
+  // General description:
+  // Verifies that enable state follows constructor input for both true and
+  // false values.
+  // Arrange: prepare context for `const auto imu_json = projectairsim::Robot::GetBasicImuConfig();`.
   const auto imu_json = projectairsim::Robot::GetBasicImuConfig();
   const auto& id = imu_json["id"];
   auto is_enabled = imu_json["enabled"];
   const auto& parent_link = imu_json["parent-link"];
+  // Act: run `auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);`.
   auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(imu.IsEnabled(), true);`.
   EXPECT_EQ(imu.IsEnabled(), true);
+  // Act: run `is_enabled = false;`.
   is_enabled = false;
   imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(imu.IsEnabled(), false);`.
   EXPECT_EQ(imu.IsEnabled(), false);
 }
 
 TEST(Imu, SetsParentLink) {
+  // General description:
+  // Verifies parent-link propagation from constructor to accessor and confirms
+  // updates when a different link is supplied.
+  // Arrange: prepare context for `const auto imu_json = projectairsim::Robot::GetBasicImuConfig();`.
   const auto imu_json = projectairsim::Robot::GetBasicImuConfig();
   const auto& id = imu_json["id"];
   const auto& is_enabled = imu_json["enabled"];
   auto parent_link = imu_json["parent-link"];
+  // Act: run `auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);`.
   auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(imu.GetParentLink(), std::string("ParentLink"));`.
   EXPECT_EQ(imu.GetParentLink(), std::string("ParentLink"));
+  // Act: run `parent_link = std::string("NEW-PARENT-LINK-123");`.
   parent_link = std::string("NEW-PARENT-LINK-123");
   imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(imu.GetParentLink(), parent_link);`.
   EXPECT_EQ(imu.GetParentLink(), parent_link);
 }
 
 TEST(Imu, LoadsImu) {
+  // General description:
+  // Ensures Load() transitions the IMU from not-loaded to loaded.
+  // Arrange: prepare context for `const auto imu_json = projectairsim::Robot::GetBasicImuConfig();`.
   const auto imu_json = projectairsim::Robot::GetBasicImuConfig();
   const auto& id = imu_json["id"];
   const auto& is_enabled = imu_json["enabled"];
   const auto& parent_link = imu_json["parent-link"];
   auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Act: run `projectairsim::Robot::LoadImu(imu, imu_json);`.
   projectairsim::Robot::LoadImu(imu, imu_json);
+  // Assert: check result from `EXPECT_EQ(imu.IsLoaded(), true);`.
   EXPECT_EQ(imu.IsLoaded(), true);
 }
 
 TEST(Imu, SetsIsLoaded) {
+  // General description:
+  // Verifies IsLoaded is false immediately after construction and true after
+  // calling Load().
+  // Arrange: prepare context for `const auto imu_json = projectairsim::Robot::GetBasicImuConfig();`.
   const auto imu_json = projectairsim::Robot::GetBasicImuConfig();
   const auto& id = imu_json["id"];
   const auto& is_enabled = imu_json["enabled"];
   const auto& parent_link = imu_json["parent-link"];
+  // Act: run `auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);`.
   auto imu = projectairsim::Robot::MakeImu(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(imu.IsLoaded(), false);`.
   EXPECT_EQ(imu.IsLoaded(), false);
+  // Act: run `projectairsim::Robot::LoadImu(imu, imu_json);`.
   projectairsim::Robot::LoadImu(imu, imu_json);
+  // Assert: check result from `EXPECT_EQ(imu.IsLoaded(), true);`.
   EXPECT_EQ(imu.IsLoaded(), true);
 }

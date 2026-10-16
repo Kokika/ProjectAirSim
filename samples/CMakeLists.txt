@@ -15,4 +15,4 @@
 #
 # ---------------------------------------------------------------------------------------------------------------------
 
-# add_subdirectory(standalone_sim)
+add_subdirectory(projectairsim_runtime)

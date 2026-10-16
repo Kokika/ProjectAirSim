@@ -51,35 +51,50 @@ class Robot {
 namespace projectairsim = microsoft::projectairsim;
 
 TEST(Magnetometer, SetsMagnetometerID) {
+  // General description:
+  // Verifies sets magnetometer id for Magnetometer.
+  // Arrange: prepare context for `const auto magnetometer_json =`.
   const auto magnetometer_json =
       projectairsim::Robot::GetBasicMagnetometerConfig();
   const auto& id = magnetometer_json["id"];
   const auto& is_enabled = magnetometer_json["enabled"];
   const auto& parent_link = magnetometer_json["parent-link"];
+      // Act: run `auto magnetometer =`.
   auto magnetometer =
       projectairsim::Robot::MakeMagnetometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(magnetometer.GetId(), std::string("Magnetometer1"));`.
   EXPECT_EQ(magnetometer.GetId(), std::string("Magnetometer1"));
 }
 
 TEST(Magnetometer, SetsSensorType) {
+  // General description:
+  // Verifies sets sensor type for Magnetometer.
+  // Arrange: prepare context for `const auto magnetometer_json =`.
   const auto magnetometer_json =
       projectairsim::Robot::GetBasicMagnetometerConfig();
   const auto& id = magnetometer_json["id"];
   const auto& is_enabled = magnetometer_json["enabled"];
   const auto& parent_link = magnetometer_json["parent-link"];
+      // Act: run `auto magnetometer =`.
   auto magnetometer =
       projectairsim::Robot::MakeMagnetometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(magnetometer.GetType(), projectairsim::SensorType::kMagnetometer);`.
   EXPECT_EQ(magnetometer.GetType(), projectairsim::SensorType::kMagnetometer);
 }
 
 TEST(Magnetometer, SetsIsEnabled) {
+  // General description:
+  // Verifies sets is enabled for Magnetometer.
+  // Arrange: prepare context for `const auto magnetometer_json =`.
   const auto magnetometer_json =
       projectairsim::Robot::GetBasicMagnetometerConfig();
   const auto& id = magnetometer_json["id"];
   auto is_enabled = magnetometer_json["enabled"];
   const auto& parent_link = magnetometer_json["parent-link"];
+      // Act: run `auto magnetometer =`.
   auto magnetometer =
       projectairsim::Robot::MakeMagnetometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(magnetometer.IsEnabled(), true);`.
   EXPECT_EQ(magnetometer.IsEnabled(), true);
   is_enabled = false;
   magnetometer =
@@ -88,13 +103,18 @@ TEST(Magnetometer, SetsIsEnabled) {
 }
 
 TEST(Magnetometer, SetsParentLink) {
+  // General description:
+  // Verifies sets parent link for Magnetometer.
+  // Arrange: prepare context for `const auto magnetometer_json =`.
   const auto magnetometer_json =
       projectairsim::Robot::GetBasicMagnetometerConfig();
   const auto& id = magnetometer_json["id"];
   const auto& is_enabled = magnetometer_json["enabled"];
   auto parent_link = magnetometer_json["parent-link"];
+      // Act: run `auto magnetometer =`.
   auto magnetometer =
       projectairsim::Robot::MakeMagnetometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(magnetometer.GetParentLink(), std::string("ParentLink"));`.
   EXPECT_EQ(magnetometer.GetParentLink(), std::string("ParentLink"));
   parent_link = std::string("NEW-PARENT-LINK-123");
   magnetometer =
@@ -103,6 +123,9 @@ TEST(Magnetometer, SetsParentLink) {
 }
 
 TEST(Magnetometer, LoadsMagnetometer) {
+  // General description:
+  // Verifies loads magnetometer for Magnetometer.
+  // Arrange: prepare context for `const auto magnetometer_json =`.
   const auto magnetometer_json =
       projectairsim::Robot::GetBasicMagnetometerConfig();
   const auto& id = magnetometer_json["id"];
@@ -110,18 +133,25 @@ TEST(Magnetometer, LoadsMagnetometer) {
   const auto& parent_link = magnetometer_json["parent-link"];
   auto magnetometer =
       projectairsim::Robot::MakeMagnetometer(id, is_enabled, parent_link);
+  // Act: run `projectairsim::Robot::LoadMagnetometer(magnetometer, magnetometer_json);`.
   projectairsim::Robot::LoadMagnetometer(magnetometer, magnetometer_json);
+  // Assert: check result from `EXPECT_EQ(magnetometer.IsLoaded(), true);`.
   EXPECT_EQ(magnetometer.IsLoaded(), true);
 }
 
 TEST(Magnetometer, SetsIsLoaded) {
+  // General description:
+  // Verifies sets is loaded for Magnetometer.
+  // Arrange: prepare context for `const auto magnetometer_json =`.
   const auto magnetometer_json =
       projectairsim::Robot::GetBasicMagnetometerConfig();
   const auto& id = magnetometer_json["id"];
   const auto& is_enabled = magnetometer_json["enabled"];
   const auto& parent_link = magnetometer_json["parent-link"];
+      // Act: run `auto magnetometer =`.
   auto magnetometer =
       projectairsim::Robot::MakeMagnetometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(magnetometer.IsLoaded(), false);`.
   EXPECT_EQ(magnetometer.IsLoaded(), false);
   projectairsim::Robot::LoadMagnetometer(magnetometer, magnetometer_json);
   EXPECT_EQ(magnetometer.IsLoaded(), true);

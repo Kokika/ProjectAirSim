@@ -11,7 +11,7 @@
 #
 # Abstract:
 #
-#   Main makefile for Windows builds to drive CMake/UBT commands.
+#   Main makefile for Windows builds to drive CMake/MSBuild/UBT commands.
 #
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -24,10 +24,11 @@ default:
 	@echo. all = Build + Test + Package everything
 	@echo. rebuild_all = Clean + Build + Test + Package everything
 	@echo. all_no_test = Build + Package everything
-	@echo. clean = Clean sim libs + Blocks build files
+	@echo. clean = Clean sim libs and Blocks build files
 	@echo.
-	@echo. simlibs_debug = Build + Package sim libs for Debug
-	@echo. simlibs_release = Build + Package sim libs for Release
+	@echo. --unity = Include experimental Unity native artifacts ^(default: off^)
+	@echo. simlibs_debug = Build sim libs for Debug
+	@echo. simlibs_release = Build sim libs for Release
 	@echo. test_simlibs_debug = Test sim libs for Debug
 	@echo. test_simlibs_release = Test sim libs for Release
 	@echo.
@@ -56,38 +57,62 @@ all_no_test: simlibs_debug simlibs_release package_simlibs package_plugin packag
 #
 # ---------------------------------------------------------------------------------------------------------------------
 
-CMAKE_BUILD_DIR = build\win64
-CMAKE_CMD = cmake -G "Ninja" \
+!ifdef PAS_TOOLCHAIN_ID
+CMAKE_BUILD_DIR = build\win64\$(PAS_TOOLCHAIN_ID)
+!else
+CMAKE_BUILD_DIR = build\win64\system
+!endif
+!ifndef CMAKE_EXTRA_ARGS
+CMAKE_EXTRA_ARGS =
+!endif
+!ifndef PAS_BUILD_UNITY
+PAS_BUILD_UNITY = OFF
+!endif
+CMAKE_CMD = cmake -DPROJECTAIRSIM_BUILD_UNITY=$(PAS_BUILD_UNITY) $(CMAKE_EXTRA_ARGS) -G "Ninja" \
 				  -DCMAKE_C_COMPILER=cl.exe \
-				  -DCMAKE_CXX_COMPILER=cl.exe
+				  -DCMAKE_CXX_COMPILER=cl.exe \
+				  -S "%CD%"
 CMAKE_DBG_BUILD_CMD = cmake --build $(CMAKE_BUILD_DIR)\Debug
 CMAKE_REL_BUILD_CMD = cmake --build $(CMAKE_BUILD_DIR)\Release
+
+.PHONY: prepare_suv_assets
+prepare_suv_assets:
+!ifndef UE_ROOT
+	@echo UE_ROOT is empty; skipping SUV asset installation.
+!else
+	@echo UE_ROOT is set; ensuring SUV assets match the manifest URL...
+	@powershell -NoProfile -ExecutionPolicy Bypass -File "%CD%\tools\assets\install_suv_assets.ps1" -Ensure
+!endif
 
 .PHONY: config_simlibs_debug
 config_simlibs_debug:
 	@echo =======================================================================
 	@echo Configuring the ProjectAirSimLibs project for Win64-Debug...
-	-mkdir $(CMAKE_BUILD_DIR)\Debug $(REDIRECT_OUTPUT)
-	cd $(CMAKE_BUILD_DIR)\Debug && $(CMAKE_CMD) -DCMAKE_BUILD_TYPE=Debug ..\..\..
+	$(CMAKE_CMD) -B "%CD%\$(CMAKE_BUILD_DIR)\Debug" -DCMAKE_BUILD_TYPE=Debug
 
-.PHONY: simlibs_debug
-simlibs_debug: config_simlibs_debug
+.PHONY: build_simlibs_debug
+build_simlibs_debug: config_simlibs_debug
 	@echo =======================================================================
 	@echo Building the ProjectAirSimLibs project for Win64-Debug...
 	$(CMAKE_DBG_BUILD_CMD)
+
+.PHONY: simlibs_debug
+simlibs_debug: prepare_suv_assets build_simlibs_debug
 
 .PHONY: config_simlibs_release
 config_simlibs_release:
 	@echo =======================================================================
 	@echo Configuring the ProjectAirSimLibs project for Win64-Release...
-	-mkdir $(CMAKE_BUILD_DIR)\Release $(REDIRECT_OUTPUT)
-	cd $(CMAKE_BUILD_DIR)\Release && $(CMAKE_CMD) -DCMAKE_BUILD_TYPE=Release ..\..\..
+	$(CMAKE_CMD) -B "%CD%\$(CMAKE_BUILD_DIR)\Release" -DCMAKE_BUILD_TYPE=Release
 
-.PHONY: simlibs_release
-simlibs_release: config_simlibs_release
+.PHONY: build_simlibs_release
+build_simlibs_release: config_simlibs_release
 	@echo =======================================================================
 	@echo Building the ProjectAirSimLibs project for Win64-Release...
 	$(CMAKE_REL_BUILD_CMD)
+
+.PHONY: simlibs_release
+simlibs_release: prepare_suv_assets build_simlibs_release
 
 .PHONY: package_simlibs
 package_simlibs: simlibs_debug simlibs_release
@@ -106,6 +131,7 @@ clean:
 	-rmdir /S /Q physics\matlab_sfunc\_deps $(REDIRECT_OUTPUT)
 	-rmdir /S /Q physics\matlab_sfunc\message $(REDIRECT_OUTPUT)
 	-rmdir /S /Q packages\projectairsim_simlibs $(REDIRECT_OUTPUT)
+	-rmdir /S /Q packages\projectairsim_cpp_client $(REDIRECT_OUTPUT)
 	-rmdir /S /Q unreal\Blocks\Plugins\ProjectAirSim\SimLibs $(REDIRECT_OUTPUT)
 	@echo Cleaning Blocks build folders...
 	-rmdir /S /Q unreal\Blocks\Binaries $(REDIRECT_OUTPUT)
@@ -126,6 +152,8 @@ clean:
 
 CTEST_DBG_CMD = ctest -C Debug -V -T test --no-compress-output
 CTEST_REL_CMD = ctest -C Release -V -T test --no-compress-output
+CMAKE_DBG_TEST_BUILD_CMD = cmake --build $(CMAKE_BUILD_DIR)\Debug --target simlibs_unit_tests
+CMAKE_REL_TEST_BUILD_CMD = cmake --build $(CMAKE_BUILD_DIR)\Release --target simlibs_unit_tests
 CMAKE_DBG_TEST_CMD = cd $(CMAKE_BUILD_DIR)\Debug && $(CTEST_DBG_CMD)
 CMAKE_REL_TEST_CMD = cd $(CMAKE_BUILD_DIR)\Release && $(CTEST_REL_CMD)
 
@@ -133,12 +161,14 @@ CMAKE_REL_TEST_CMD = cd $(CMAKE_BUILD_DIR)\Release && $(CTEST_REL_CMD)
 test_simlibs_debug: simlibs_debug
 	@echo =======================================================================
 	@echo Testing the ProjectAirSimLibs project for Win64-Debug...
+	$(CMAKE_DBG_TEST_BUILD_CMD)
 	$(CMAKE_DBG_TEST_CMD)
 
 .PHONY: test_simlibs_release
 test_simlibs_release: simlibs_release
 	@echo =======================================================================
 	@echo Testing the ProjectAirSimLibs project for Win64-Release...
+	$(CMAKE_REL_TEST_BUILD_CMD)
 	$(CMAKE_REL_TEST_CMD)
 
 # ---------------------------------------------------------------------------------------------------------------------

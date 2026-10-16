@@ -87,7 +87,7 @@ class World(object):
         """Get sim clock type
 
         Returns:
-            string: the sim clock type ("steppable" or "real-time")
+            string: the sim clock type ("steppable", "real-time", "engine-driven", or "external-clock")
         """
         sim_clock_type_req: Dict = {
             "method": f"{self.parent_topic}/GetSimClockType",
@@ -334,7 +334,34 @@ class World(object):
         single_step_result: str = self.client.request(single_step_req)
         return single_step_result
 
-    def list_actors(self) -> List[str]:
+    def step(self, dt_ns: int) -> dict:
+        """Advance sim by dt_ns nanoseconds and return bundled state + events.
+
+        This is the pull API entry point. The sim advances time, then returns
+        per-drone kinematics and any events (collisions) that
+        occurred during the step.
+
+        Actions should be sent to individual robots via their existing move
+        methods before calling step().
+
+        Args:
+            dt_ns: simulation time to advance, in nanoseconds
+
+        Returns:
+            dict with keys:
+                sim_time_ns (int): current sim time after the step
+                robots (dict): per-drone data keyed by drone ID, each containing:
+                    state (dict): position, orientation, linear_velocity, angular_velocity
+                    events (list): collision and gate_pass events with sim_time_ns ordering
+        """
+        step_req: dict = {
+            "method": f"{self.parent_topic}/Step",
+            "params": {"dt_ns": dt_ns},
+            "version": 1.0,
+        }
+        return self.client.request(step_req)
+
+    def list_actors(self) -> list[str]:
         """List actor names in the scene
 
         Returns:
@@ -1255,7 +1282,7 @@ class World(object):
                 )
             else:
                 projectairsim_log().warn(
-                    "For real-time clock types, assets cannot be spawned before starting the sim clock."
+                    "For non-steppable clock types, assets cannot be spawned before starting the sim clock."
                 )
 
         sim_config_data = commentjson.dumps(scene_config_dict)

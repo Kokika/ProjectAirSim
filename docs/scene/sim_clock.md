@@ -43,6 +43,32 @@ This is useful, for example, when running **non-physics "computer vision" mode**
 }
 ```
 
+#### #3 - Use an engine-driven clock (host loop outside the sim scheduler)
+
+Use the `engine-driven` clock when another runtime is responsible for advancing the simulation loop and supplying elapsed time into Project AirSim while keeping deterministic fixed sim steps (`step-ns`).
+
+From the **Unreal plugin** perspective this clock mode is **engine-driven** (the sim does not run its own periodic tick); on **Unreal Engine** builds the name is the **unreal-driven-clock**. Normally `AUnrealScene::Tick` forwards each frame's `DeltaTime` and drains fixed `step-ns` ticks. With [`clock.engine-substepping`](../config_scene.md#unreal-engine-clock-options), it instead runs one complete scene tick for each consumed Chaos substep using the actual substep duration, even when the scene has no Unreal Physics robot. Controllers, physics models, actuators, sensors, and timestamps therefore use that same measured delta. In this mode, `step-ns` is Chaos' maximum substep duration and Unreal's maximum of 16 substeps per frame is used. Other clock types ignore `engine-substepping` and do not capture Chaos substeps.
+
+```json
+"clock": {
+  "type": "engine-driven",
+  "step-ns": 3000000,
+  "engine-fixed-fps": 50.0,
+  "engine-substepping": true
+}
+```
+
+#### #4 - Use an external-clock for future external control integration
+
+Use the `external-clock` type when you want the same current behavior as `engine-driven`, but with a distinct configuration label reserved for future control of simlibs by another app or system.
+
+```json
+"clock": {
+  "type": "external-clock",
+  "step-ns": 3000000
+}
+```
+
 ---
 
 Copyright (C) Microsoft Corporation.  

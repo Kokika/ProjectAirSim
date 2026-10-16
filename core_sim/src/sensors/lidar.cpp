@@ -1,4 +1,3 @@
-// Copyright (C) Microsoft Corporation.  
 // Copyright (C) 2025 IAMAI CONSULTING CORP
 //
 // MIT License. All rights reserved.
@@ -128,6 +127,29 @@ static const struct LidarKindEntry {
                    Vector3(0.0f, 0.0f, 0.0f),  // no_return_point_value
                    false                       // draw_debug_points
                    )},
+     {Constant::Config::
+       depth_lidar,  // Default settings for depth-camera-based
+                   // cylindrical scan pattern
+     LidarSettings(LidarKind::kDepthCylindrical,
+             Transform(Vector3(0, 0, -1),
+                 Quaternion::Identity()),  // origin
+             Quaternion::Identity(),             // scan_orientation
+             16,                                 // number_of_channels
+             100.0f,                             // range
+             100000,                             // points_per_second
+             0.0f,                               // report_frequency
+             10.0f,                              // horizontal_rotation_frequency
+             0.0f,                               // horizontal_fov_start_deg
+             360.0f,                             // horizontal_fov_end_deg
+             0.0f,                               // vertical_rotation_frequency (ignored)
+             -15.0f,                             // vertical_fov_lower_deg
+             15.0f,                              // vertical_fov_upper_deg
+             1.0f,                               // radial_scaling
+             false,                              // disable_self_hits
+             false,                              // report_no_return_points
+             Vector3(0.0f, 0.0f, 0.0f),         // no_return_point_value
+             false                               // draw_debug_points
+             )},
     {Constant::Config::generic_rosette,  // Default settings for generic rosette
                                          // scan pattern
      LidarSettings(LidarKind::kGenericRosette,
@@ -306,7 +328,9 @@ const LidarSettings& Lidar::Impl::GetLidarSetting() const {
   return lidar_settings;
 }
 
-void Lidar::Impl::OnBeginUpdate() { topic_manager_.RegisterTopic(lidar_topic); }
+void Lidar::Impl::OnBeginUpdate() {
+  topic_manager_.RegisterTopic(lidar_topic);
+}
 
 void Lidar::Impl::PublishLidarMsg(const LidarMessage& lidar_msg) {
   std::lock_guard<std::mutex> lock(update_lock_);
@@ -314,7 +338,9 @@ void Lidar::Impl::PublishLidarMsg(const LidarMessage& lidar_msg) {
   topic_manager_.PublishTopic(lidar_topic, (Message&)lidar_msg);
 }
 
-void Lidar::Impl::OnEndUpdate() { topic_manager_.UnregisterTopic(lidar_topic); }
+void Lidar::Impl::OnEndUpdate() {
+  topic_manager_.UnregisterTopic(lidar_topic);
+}
 
 // class lidar::loader
 

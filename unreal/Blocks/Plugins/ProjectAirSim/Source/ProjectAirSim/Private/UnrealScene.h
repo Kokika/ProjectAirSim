@@ -24,12 +24,15 @@
 // comment so that generated.h is always the last include file with clang-format
 #include "UnrealScene.generated.h"
 
+class FProjectAirSimSceneSubstepSampler;
+
 UCLASS()
 class AUnrealScene : public AActor {
   GENERATED_BODY()
 
  public:
   explicit AUnrealScene(const FObjectInitializer& ObjectInitialize);
+  ~AUnrealScene() override;
 
   void LoadUnrealScene(
       UWorld* World, microsoft::projectairsim::Scene& Scene,
@@ -121,8 +124,14 @@ class AUnrealScene : public AActor {
 
   TimeNano unreal_time;
   bool using_unreal_physics;
+  bool using_unreal_vehicle_physics = false;
+  bool using_unreal_driven_clock = false;
+  bool using_unreal_physics_substep_clock = false;
+  FProjectAirSimSceneSubstepSampler* scene_substep_sampler_ = nullptr;
+  microsoft::projectairsim::EngineDrivenClock* unreal_driven_clock_ =
+    nullptr;
 
-  std::unique_ptr<class WorldSimApi> world_api;
+  std::unique_ptr<WorldSimApi> world_api;
   std::shared_ptr<TimeOfDay> time_of_day;
   std::vector<std::string> objects_;
 

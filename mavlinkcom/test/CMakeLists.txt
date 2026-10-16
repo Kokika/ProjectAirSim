@@ -8,7 +8,7 @@ include_directories(
 
 set(PROJECT_CPP ${PROJECT_NAME}_sources)
 file(GLOB_RECURSE PROJECT_CPP "./*.cpp")
-add_executable(${PROJECT_NAME} ${PROJECT_CPP})
+add_executable(${PROJECT_NAME} EXCLUDE_FROM_ALL ${PROJECT_CPP})
 
 
 target_include_directories(

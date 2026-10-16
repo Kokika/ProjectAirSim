@@ -51,32 +51,47 @@ namespace projectairsim = microsoft::projectairsim;
 using json = nlohmann::json;
 
 TEST(Barometer, SetsBarometerID) {
+  // General description:
+  // Verifies sets barometer id for Barometer.
+  // Arrange: prepare context for `const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();`.
   const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();
   const auto& id = barometer_json["id"];
   const auto& is_enabled = barometer_json["enabled"];
   const auto& parent_link = barometer_json["parent-link"];
+      // Act: run `auto barometer =`.
   auto barometer =
       projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(barometer.GetId(), std::string("Barometer1"));`.
   EXPECT_EQ(barometer.GetId(), std::string("Barometer1"));
 }
 
 TEST(Barometer, SetsSensorType) {
+  // General description:
+  // Verifies sets sensor type for Barometer.
+  // Arrange: prepare context for `const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();`.
   const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();
   const auto& id = barometer_json["id"];
   const auto& is_enabled = barometer_json["enabled"];
   const auto& parent_link = barometer_json["parent-link"];
+      // Act: run `auto barometer =`.
   auto barometer =
       projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(barometer.GetType(), projectairsim::SensorType::kBarometer);`.
   EXPECT_EQ(barometer.GetType(), projectairsim::SensorType::kBarometer);
 }
 
 TEST(Barometer, SetsIsEnabled) {
+  // General description:
+  // Verifies sets is enabled for Barometer.
+  // Arrange: prepare context for `const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();`.
   const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();
   const auto& id = barometer_json["id"];
   auto is_enabled = barometer_json["enabled"];
   const auto& parent_link = barometer_json["parent-link"];
+      // Act: run `auto barometer =`.
   auto barometer =
       projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(barometer.IsEnabled(), true);`.
   EXPECT_EQ(barometer.IsEnabled(), true);
   is_enabled = false;
   barometer = projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
@@ -84,12 +99,17 @@ TEST(Barometer, SetsIsEnabled) {
 }
 
 TEST(Barometer, SetsParentLink) {
+  // General description:
+  // Verifies sets parent link for Barometer.
+  // Arrange: prepare context for `const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();`.
   const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();
   const auto& id = barometer_json["id"];
   const auto& is_enabled = barometer_json["enabled"];
   auto parent_link = barometer_json["parent-link"];
+      // Act: run `auto barometer =`.
   auto barometer =
       projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(barometer.GetParentLink(), std::string("ParentLink"));`.
   EXPECT_EQ(barometer.GetParentLink(), std::string("ParentLink"));
   parent_link = std::string("NEW-PARENT-LINK-123");
   barometer = projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
@@ -97,23 +117,33 @@ TEST(Barometer, SetsParentLink) {
 }
 
 TEST(Barometer, LoadsBarometer) {
+  // General description:
+  // Verifies loads barometer for Barometer.
+  // Arrange: prepare context for `const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();`.
   const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();
   const auto& id = barometer_json["id"];
   const auto& is_enabled = barometer_json["enabled"];
   const auto& parent_link = barometer_json["parent-link"];
   auto barometer =
       projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
+  // Act: run `projectairsim::Robot::LoadBarometer(barometer, barometer_json);`.
   projectairsim::Robot::LoadBarometer(barometer, barometer_json);
+  // Assert: check result from `EXPECT_EQ(barometer.IsLoaded(), true);`.
   EXPECT_EQ(barometer.IsLoaded(), true);
 }
 
 TEST(Barometer, SetsIsLoaded) {
+  // General description:
+  // Verifies sets is loaded for Barometer.
+  // Arrange: prepare context for `const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();`.
   const auto barometer_json = projectairsim::Robot::GetBasicBarometerConfig();
   const auto& id = barometer_json["id"];
   const auto& is_enabled = barometer_json["enabled"];
   const auto& parent_link = barometer_json["parent-link"];
+      // Act: run `auto barometer =`.
   auto barometer =
       projectairsim::Robot::MakeBarometer(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(barometer.IsLoaded(), false);`.
   EXPECT_EQ(barometer.IsLoaded(), false);
   projectairsim::Robot::LoadBarometer(barometer, barometer_json);
   EXPECT_EQ(barometer.IsLoaded(), true);

@@ -23,7 +23,7 @@ On Linux, Project AirSim can be developed with VS Code which provides a light-we
     - **Vulkan utilities** – tools like `vulkaninfo` to verify graphics support  
 
     **Note:**  
-    Unreal Engine 5.2 and 5.7 provide their own complete Linux toolchain, including **Clang 20.1.x**, **libc++**, **lld**, and related LLVM tools.  
+    Unreal Engine 5.2 and 5.7 provide their own complete, version-specific Linux toolchains, including **Clang**, **libc++**, **lld**, and related LLVM tools.
     Project AirSim builds **must use the Unreal-provided toolchain**, and therefore **do not require installing Clang or libc++ from the system package manager**.
 
 3. Install **[VS Code](https://code.visualstudio.com/)** and the following extensions:
@@ -77,8 +77,14 @@ On Linux, Project AirSim can be developed with VS Code which provides a light-we
             -set:WithLinuxAArch64=false \
             -set:WithFullDebugInfo=false \
             -set:WithDDC=true \
-            -set:GameConfigurations="DebugGame;Development"
+            -set:GameConfigurations="DebugGame;Development;Shipping"
         ```
+
+        Include `Shipping` if you plan to run `blocks_shipping`,
+        `package_blocks_shipping`, `package_plugin`, `all`, or `all_no_test`.
+        Installed builds only support the game configurations they were built
+        with; otherwise UnrealBuildTool will report that the target cannot be
+        built in the Shipping configuration with that engine distribution.
 
     **Note:** Making an installed build will take a **lot of disk space (~200 GB)** and a **lot of time (~4+ hours)** because it will build the engine and precompile the engine's **[DDC](https://docs.unrealengine.com/en-US/Engine/Basics/DerivedDataCache/index.html)** content. However, using the installed build for Project AirSim development can save a lot of developer iteration time since the engine will never recompile and the bulk of the initial shader compilation will already be complete. This is similar to using a Windows binary engine downloaded from Epic's Launcher. Most of the original source package and build files can also be deleted to just keep the installed build version which is ~40 GB.
 

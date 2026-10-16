@@ -20,6 +20,7 @@ set(TARGET_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(
     ${TARGET_NAME}
+    EXCLUDE_FROM_ALL
     gtest_simple_drive.cpp
 )
 
@@ -31,6 +32,8 @@ set_target_properties(
 
 # Add dependency to core_sim_gtests since it copies the runtime DLLs into ${SIMLIBS_TEST_DIR}
 if(WIN32)
+    add_dependencies(${TARGET_NAME} rover_api core_sim core_sim_gtests nng-external mavlinkcom gtest_main)
+elseif(APPLE)
     add_dependencies(${TARGET_NAME} rover_api core_sim core_sim_gtests nng-external mavlinkcom gtest_main)
 else()
     add_dependencies(${TARGET_NAME} rover_api core_sim core_sim_gtests nng-external openssl-external mavlinkcom gtest_main)
@@ -47,8 +50,12 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${TARGET_SOURCE_DIR}/include/
         ${TARGET_SOURCE_DIR}/src/  # for private headers
+        ${PROJECT_SOURCE_DIR}/core_sim/src/  # Scene test helper managers
         ${EIGEN_INCLUDE_DIR}
         ${JSON_INCLUDE_DIR}
+        ${NNG_INCLUDE_DIR}
+        ${MSGPACK_INCLUDE_DIR}
+        ${OPENSSL_INCLUDE_DIR}
 )
 
 if(WIN32)
@@ -59,7 +66,7 @@ target_link_libraries(
         rover_api
         core_sim
         nng
-        lvmon
+        $<$<BOOL:${PROJECTAIRSIM_ENABLE_LVMON}>:lvmon>
 )
 else()
 target_link_libraries(
@@ -69,8 +76,8 @@ target_link_libraries(
         rover_api
         core_sim
         nng
-        lvmon
-        crypto # Client authorization
+        $<$<BOOL:${PROJECTAIRSIM_ENABLE_LVMON}>:lvmon>
+        ${OPENSSL_CRYPTO_LIBRARY} # Client authorization
 )
 endif()
 

@@ -24,6 +24,10 @@ bld/
 [Bb]uild/
 [Tt]esting/
 
+# Project AirSim C++ client local Linux build artifacts
+client/cpp/build_linux/
+client/cpp/build_local/
+
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 # Uncomment if you have tasks that create the project's static files in wwwroot
@@ -345,6 +349,9 @@ unreal/**/Samples
 # VS Code projects
 *.code-workspace
 
+# Local developer tools
+.tools/
+
 # VS2019 WSL Intellisense cache
 **/out
 
@@ -352,7 +359,15 @@ unreal/**/Samples
 ros/.catkin_workspace
 ros/devel/*
 ros/build/*
+ros/build-*/
+ros/install/
+ros/install-*/
+ros/log/
+ros/log-*/
 ros/src/CMakeLists.txt
+
+# Generated test and benchmark artifacts
+test-artifact-dir/
 
 # vim
 *.swp
@@ -372,6 +387,7 @@ env/
 # client library dev install
 **/projectairsim.egg-info/
 **/projectairsim_ros.egg-info/
+client/python/projectairsim/dist/
 
 /tools/ConvertToGLTF/output
 
@@ -380,3 +396,13 @@ env/
 *.slxc
 
 venv
+
+AGENTS.md
+# Optional Unreal vehicle asset packs (installed by tools/assets/install_suv_assets.ps1)
+/unreal/Blocks/Plugins/ProjectAirSim/Content/VehicleAdv/SUV/
+
+# Public release tooling (not a build output).
+!/tools/release/
+!/tools/release/**
+/tools/release/**/__pycache__/
+/tools/release/**/*.pyc

@@ -48,45 +48,75 @@ namespace projectairsim = microsoft::projectairsim;
 // class FastPhysicsBody
 
 TEST(FastPhysicsBody, Constructor) {
+  // General description:
+  // Verifies FastPhysicsBody can be default-constructed.
+  // Arrange: prepare context for `auto body = std::make_unique<projectairsim::FastPhysicsBody>();`.
+  // Act: run `auto body = std::make_unique<projectairsim::FastPhysicsBody>();`.
   auto body = std::make_unique<projectairsim::FastPhysicsBody>();
+  // Assert: check result from `EXPECT_NE(body, nullptr);`.
   EXPECT_NE(body, nullptr);
 }
 
 TEST(FastPhysicsBody, BasePhysicsSetGetName) {
+  // General description:
+  // Verifies SetName/GetName behavior including default empty name.
+  // Arrange: prepare context for `projectairsim::FastPhysicsBody body;`.
   projectairsim::FastPhysicsBody body;
+  // Assert: check result from `EXPECT_EQ(body.GetName(), "");`.
   EXPECT_EQ(body.GetName(), "");
 
+  // Act: run `body.SetName("Test_Name");`.
   body.SetName("Test_Name");
+  // Assert: check result from `EXPECT_EQ(body.GetName(), "Test_Name");`.
   EXPECT_EQ(body.GetName(), "Test_Name");
 }
 
 TEST(FastPhysicsBody, BasePhysicsSetGetMass) {
+  // General description:
+  // Verifies SetMass updates both mass and inverse-mass consistently.
+  // Arrange: prepare context for `projectairsim::FastPhysicsBody body;`.
   projectairsim::FastPhysicsBody body;
+  // Act: run `body.SetMass(4.0);`.
   body.SetMass(4.0);
+  // Assert: check result from `EXPECT_FLOAT_EQ(body.GetMass(), 4.0f);`.
   EXPECT_FLOAT_EQ(body.GetMass(), 4.0f);
+  // Assert: check result from `EXPECT_FLOAT_EQ(body.GetMassInv(), 0.25f);`.
   EXPECT_FLOAT_EQ(body.GetMassInv(), 0.25f);
 }
 
 TEST(FastPhysicsBody, BasePhysicsSetGetInertia) {
+  // General description:
+  // Verifies inertia tensor assignment and cached inverse computation.
+  // Arrange: prepare context for `projectairsim::FastPhysicsBody body;`.
   projectairsim::FastPhysicsBody body;
   projectairsim::Matrix3x3 inertia;
   inertia << 1., 0., 0., 0., 2., 0., 0., 0., 3.;
+  // Act: run `body.SetInertia(inertia);`.
   body.SetInertia(inertia);
+  // Assert: check result from `EXPECT_EQ(body.GetInertia(), inertia);`.
   EXPECT_EQ(body.GetInertia(), inertia);
+  // Assert: check result from `EXPECT_EQ(body.GetInertiaInv(), inertia.inverse());`.
   EXPECT_EQ(body.GetInertiaInv(), inertia.inverse());
 }
 
 TEST(FastPhysicsBody, GetPhysicsType) {
+  // General description:
+  // Verifies bodies built from simulated robots report FastPhysics backend
+  // type.
+  // Arrange: prepare context for `projectairsim::Simulator simulator;`.
   projectairsim::Simulator simulator;
   simulator.LoadSceneWithJSON(physics_test_config);
   auto& scene = simulator.GetScene();
+  // Act: run `auto actors = scene.GetActors();`.
   auto actors = scene.GetActors();
+  // Assert: check result from `EXPECT_EQ(actors.size(), 1);`.
   EXPECT_EQ(actors.size(), 1);
 
   for (auto actor_ref : actors) {
     if (actor_ref.get().GetType() == projectairsim::ActorType::kRobot) {
       auto& sim_robot = dynamic_cast<projectairsim::Robot&>(actor_ref.get());
       projectairsim::FastPhysicsBody body(sim_robot);
+      // Assert: check result from `EXPECT_EQ(body.GetPhysicsType(),`.
       EXPECT_EQ(body.GetPhysicsType(),
                 projectairsim::PhysicsType::kFastPhysics);
     }
@@ -94,6 +124,10 @@ TEST(FastPhysicsBody, GetPhysicsType) {
 }
 
 TEST(FastPhysicsBody, CalculateExternalWrench) {
+  // General description:
+  // Verifies external forces/torques are accumulated correctly from multiple
+  // wrench points and extra external force.
+  // Arrange: prepare context for `projectairsim::TransformTree::RefFrame refframe("TestBody");`.
   projectairsim::TransformTree::RefFrame refframe("TestBody");
   projectairsim::TransformTree transform_tree;
   projectairsim::TestFastPhysicsBody body;
@@ -130,9 +164,12 @@ TEST(FastPhysicsBody, CalculateExternalWrench) {
   body.CalculateExternalWrench();
 
   ext_wrench = body.GetExternalWrench();
+  // Assert baseline: equal/opposite Y forces cancel total force.
   force_ans = {0., 0., 0.};
+  // Assert baseline: resulting force vector is zero.
   EXPECT_EQ(ext_wrench.force, force_ans);
 
+  // Assert baseline: moment arm creates -Z reaction torque.
   torque_ans = {0., 0., -2.};
   EXPECT_EQ(ext_wrench.torque, torque_ans);
 
@@ -211,10 +248,15 @@ TEST(FastPhysicsBody, CalculateExternalWrench) {
 }
 
 TEST(FastPhysicsBody, CalculateInertia) {
+  // General description:
+  // Verifies calculate inertia for FastPhysicsBody.
+  // Arrange: prepare context for `projectairsim::Simulator simulator;`.
   projectairsim::Simulator simulator;
   simulator.LoadSceneWithJSON(physics_test_config);
   auto& scene = simulator.GetScene();
+  // Act: run `auto actors = scene.GetActors();`.
   auto actors = scene.GetActors();
+  // Assert: check result from `EXPECT_EQ(actors.size(), 1);`.
   EXPECT_EQ(actors.size(), 1);
 
   for (auto actor_ref : actors) {
@@ -237,10 +279,15 @@ TEST(FastPhysicsBody, CalculateInertia) {
 }
 
 TEST(FastPhysicsBody, InitializeDragFaces) {
+  // General description:
+  // Verifies initialize drag faces for FastPhysicsBody.
+  // Arrange: prepare context for `projectairsim::Simulator simulator;`.
   projectairsim::Simulator simulator;
   simulator.LoadSceneWithJSON(physics_test_config);
   auto& scene = simulator.GetScene();
+  // Act: run `auto actors = scene.GetActors();`.
   auto actors = scene.GetActors();
+  // Assert: check result from `EXPECT_EQ(actors.size(), 1);`.
   EXPECT_EQ(actors.size(), 1);
 
   for (auto actor_ref : actors) {
@@ -301,10 +348,15 @@ TEST(FastPhysicsBody, InitializeDragFaces) {
 }
 
 TEST(FastPhysicsBody, ReadWriteRobotData) {
+  // General description:
+  // Verifies read write robot data for FastPhysicsBody.
+  // Arrange: prepare context for `projectairsim::Simulator simulator;`.
   projectairsim::Simulator simulator;
   simulator.LoadSceneWithJSON(physics_test_config);
   auto& scene = simulator.GetScene();
+  // Act: run `auto actors = scene.GetActors();`.
   auto actors = scene.GetActors();
+  // Assert: check result from `EXPECT_EQ(actors.size(), 1);`.
   EXPECT_EQ(actors.size(), 1);
 
   for (auto actor_ref : actors) {
@@ -337,13 +389,18 @@ TEST(FastPhysicsBody, ReadWriteRobotData) {
 }
 
 TEST(FastPhysicsBody, IsStillGrounded) {
+  // General description:
+  // Verifies is still grounded for FastPhysicsBody.
+  // Arrange: prepare context for `projectairsim::TestFastPhysicsBody body;`.
   projectairsim::TestFastPhysicsBody body;
   body.SetMass(2.0);
   body.SetExternalWrench(projectairsim::Wrench({0., 0., 0.}, {0., 0., 0.}));
   body.SetEnvGravity({0, 0, projectairsim::EarthUtils::kGravity});
+  // Act: run `body.SetIsGrounded(false);`.
   body.SetIsGrounded(false);
 
   // Not grounded stays not grounded
+  // Assert: check result from `EXPECT_FALSE(body.IsStillGrounded());`.
   EXPECT_FALSE(body.IsStillGrounded());
 
   // Grounded with zero force is still grounded
@@ -360,6 +417,9 @@ TEST(FastPhysicsBody, IsStillGrounded) {
 }
 
 TEST(FastPhysicsBody, IsLandingCollision) {
+  // General description:
+  // Verifies is landing collision for FastPhysicsBody.
+  // Arrange: prepare context for `projectairsim::TestFastPhysicsBody body;`.
   projectairsim::TestFastPhysicsBody body;
   projectairsim::CollisionInfo col_info(false, {0., 0., 0.}, {0., 0., 0.},
                                         {0., 0., 0.}, 0., 0, "obj", 0);
@@ -370,9 +430,11 @@ TEST(FastPhysicsBody, IsLandingCollision) {
   body.SetEnvGravity({0, 0, projectairsim::EarthUtils::kGravity});
   body.SetIsGrounded(false);
   body.SetCollisionInfo(col_info);
+  // Act: run `body.SetKinematics(kin);`.
   body.SetKinematics(kin);
 
   // No collision case
+  // Assert: check result from `EXPECT_FALSE(body.IsLandingCollision());`.
   EXPECT_FALSE(body.IsLandingCollision());
 
   // Collision moving down in correct orientation
@@ -415,13 +477,18 @@ TEST(FastPhysicsBody, IsLandingCollision) {
 }
 
 TEST(FastPhysicsBody, NeedsCollisionResponse) {
+  // General description:
+  // Verifies needs collision response for FastPhysicsBody.
+  // Arrange: prepare context for `projectairsim::TestFastPhysicsBody body;`.
   projectairsim::TestFastPhysicsBody body;
   projectairsim::CollisionInfo col_info(false, {0., 0., 0.}, {0., 0., 0.},
                                         {0., 0., 0.}, 0., 0, "obj", 0);
   projectairsim::Kinematics kin;
+  // Act: run `kin.twist.linear = {0., 0., -1.0};`.
   kin.twist.linear = {0., 0., -1.0};
 
   // No collision case
+  // Assert: check result from `EXPECT_FALSE(body.NeedsCollisionResponse(kin));`.
   EXPECT_FALSE(body.NeedsCollisionResponse(kin));
 
   // Not moving into collision case
@@ -439,11 +506,19 @@ TEST(FastPhysicsBody, NeedsCollisionResponse) {
 // class FastPhysicsModel
 
 TEST(FastPhysicsModel, Constructor) {
+  // General description:
+  // Verifies constructor for FastPhysicsModel.
+  // Arrange: prepare context for `auto model = std::make_unique<projectairsim::FastPhysicsModel>();`.
+  // Act: run `auto model = std::make_unique<projectairsim::FastPhysicsModel>();`.
   auto model = std::make_unique<projectairsim::FastPhysicsModel>();
+  // Assert: check result from `EXPECT_NE(model, nullptr);`.
   EXPECT_NE(model, nullptr);
 }
 
 TEST(FastPhysicsModel, CalcDragWrench) {
+  // General description:
+  // Verifies calc drag wrench for FastPhysicsModel.
+  // Arrange: prepare context for `projectairsim::FastPhysicsModel model;`.
   projectairsim::FastPhysicsModel model;
   std::vector<projectairsim::DragFace> drag_faces;
 
@@ -471,7 +546,9 @@ TEST(FastPhysicsModel, CalcDragWrench) {
                                     orientation, air_density, wind_velocity);
 
   ans_force = {0., 0., 0.};
+  // Act: run `ans_torque = {0., 0., 0.};`.
   ans_torque = {0., 0., 0.};
+  // Assert: check result from `EXPECT_EQ(wrench.force, ans_force);`.
   EXPECT_EQ(wrench.force, ans_force);
   EXPECT_EQ(wrench.torque, ans_torque);
 
@@ -556,6 +633,9 @@ TEST(FastPhysicsModel, CalcDragWrench) {
 }
 
 TEST(FastPhysicsModel, CalcNextKinematicsGrounded) {
+  // General description:
+  // Verifies calc next kinematics grounded for FastPhysicsModel.
+  // Arrange: prepare context for `projectairsim::FastPhysicsModel model;`.
   projectairsim::FastPhysicsModel model;
   projectairsim::Vector3 position;
   projectairsim::Quaternion orientation;
@@ -565,8 +645,10 @@ TEST(FastPhysicsModel, CalcNextKinematicsGrounded) {
   position = {1.0, 2.0, 3.0};
   orientation =
       projectairsim::TransformUtils::ToQuaternion(M_PI / 4, M_PI / 4, M_PI / 4);
+  // Act: run `kin = model.CalcNextKinematicsGrounded(position, orientation);`.
   kin = model.CalcNextKinematicsGrounded(position, orientation);
 
+  // Assert: check result from `EXPECT_FLOAT_EQ(kin.pose.position.x(), 1.0);`.
   EXPECT_FLOAT_EQ(kin.pose.position.x(), 1.0);
   EXPECT_FLOAT_EQ(kin.pose.position.y(), 2.0);
   EXPECT_FLOAT_EQ(kin.pose.position.z(), 3.0);
@@ -585,6 +667,9 @@ TEST(FastPhysicsModel, CalcNextKinematicsGrounded) {
 }
 
 TEST(FastPhysicsModel, CalcNextKinematicsNoCollision) {
+  // General description:
+  // Verifies calc next kinematics no collision for FastPhysicsModel.
+  // Arrange: prepare context for `projectairsim::FastPhysicsModel model;`.
   projectairsim::FastPhysicsModel model;
   auto body = std::make_shared<projectairsim::TestFastPhysicsBody>();
   auto fp_body = std::static_pointer_cast<projectairsim::FastPhysicsBody>(body);
@@ -607,9 +692,11 @@ TEST(FastPhysicsModel, CalcNextKinematicsNoCollision) {
   init_kin.accels.angular = {0., 0., 0.};
   body->SetKinematics(init_kin);
 
+  // Act: run `kin = model.CalcNextKinematicsNoCollision(1.0f, fp_body);`.
   kin = model.CalcNextKinematicsNoCollision(1.0f, fp_body);
 
   // Note: Current algorithm calculates pose from prev velocities/accels
+  // Assert: check result from `EXPECT_FLOAT_EQ(kin.pose.position.z(), -10.0);`.
   EXPECT_FLOAT_EQ(kin.pose.position.z(), -10.0);
   EXPECT_FLOAT_EQ(kin.twist.linear.z(), 4.9033251);
   EXPECT_FLOAT_EQ(kin.accels.linear.z(), projectairsim::EarthUtils::kGravity);
@@ -666,6 +753,9 @@ TEST(FastPhysicsModel, CalcNextKinematicsNoCollision) {
 }
 
 TEST(FastPhysicsModel, CalcNextKinematicsWithCollision) {
+  // General description:
+  // Verifies calc next kinematics with collision for FastPhysicsModel.
+  // Arrange: prepare context for `projectairsim::FastPhysicsModel model;`.
   projectairsim::FastPhysicsModel model;
   auto body = std::make_shared<projectairsim::TestFastPhysicsBody>();
   auto fp_body = std::static_pointer_cast<projectairsim::FastPhysicsBody>(body);
@@ -694,8 +784,10 @@ TEST(FastPhysicsModel, CalcNextKinematicsWithCollision) {
   col_info.penetration_depth = 0.;
   body->SetCollisionInfo(col_info);
 
+  // Act: run `kin = model.CalcNextKinematicsWithCollision(1.0f, fp_body);`.
   kin = model.CalcNextKinematicsWithCollision(1.0f, fp_body);
 
+  // Assert: check result from `EXPECT_EQ(kin.accels.linear, projectairsim::Vector3::Zero());`.
   EXPECT_EQ(kin.accels.linear, projectairsim::Vector3::Zero());
   EXPECT_EQ(kin.accels.angular, projectairsim::Vector3::Zero());
 
@@ -775,10 +867,15 @@ TEST(FastPhysicsModel, CalcNextKinematicsWithCollision) {
 }
 
 TEST(FastPhysicsModel, StepPhysicsBody) {
+  // General description:
+  // Verifies step physics body for FastPhysicsModel.
+  // Arrange: prepare context for `projectairsim::Simulator simulator;`.
   projectairsim::Simulator simulator;
   simulator.LoadSceneWithJSON(physics_test_config);
   auto& scene = simulator.GetScene();
+  // Act: run `auto actors = scene.GetActors();`.
   auto actors = scene.GetActors();
+  // Assert: check result from `EXPECT_EQ(actors.size(), 1);`.
   EXPECT_EQ(actors.size(), 1);
 
   for (auto actor_ref : actors) {

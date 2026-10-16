@@ -52,41 +52,64 @@ class TestComponentClass {
 };
 
 TEST(ServiceMethod, TestCreateInstanceMethodHandlerForGetters) {
+  // General description:
+  // Verifies test create instance method handler for getters for ServiceMethod.
+  // Arrange: prepare context for `TestComponentClass test_api_class_instance;`.
   TestComponentClass test_api_class_instance;
   auto new_method = projectairsim::Scene::GetMethod();
   projectairsim::MethodHandler test_handler = new_method.CreateMethodHandler(
       &TestComponentClass::APIMethodA, test_api_class_instance);
+  // Act: run `auto result = test_handler("[]"_json);`.
   auto result = test_handler("[]"_json);
+  // Assert: check result from `EXPECT_EQ(result, 10);`.
   EXPECT_EQ(result, 10);
 }
 TEST(ServiceMethod, TestCreateInstanceMethodHandlerForSetters) {
+  // General description:
+  // Verifies test create instance method handler for setters for ServiceMethod.
+  // Arrange: prepare context for `TestComponentClass test_api_class_instance;`.
   TestComponentClass test_api_class_instance;
   auto new_method = projectairsim::Scene::GetMethod();
   projectairsim::MethodHandler test_handler = new_method.CreateMethodHandler(
       &TestComponentClass::APIMethodB, test_api_class_instance);
+  // Act: run `auto result = test_handler(R"([5])"_json);`.
   auto result = test_handler(R"([5])"_json);
+  // Assert: check result from `EXPECT_EQ(result, 5);`.
   EXPECT_EQ(result, 5);
 }
 
 TEST(ServiceMethod, TestCreateInstanceMethodHandlerForMutators) {
+  // General description:
+  // Verifies test create instance method handler for mutators for ServiceMethod.
+  // Arrange: prepare context for `TestComponentClass test_api_class_instance;`.
   TestComponentClass test_api_class_instance;
   auto new_method = projectairsim::Scene::GetMethod();
   projectairsim::MethodHandler test_handler = new_method.CreateMethodHandler(
       &TestComponentClass::APIMethodC, test_api_class_instance);
+  // Act: run `auto result = test_handler(R"([5])"_json);`.
   auto result = test_handler(R"([5])"_json);
+  // Assert: check result from `EXPECT_EQ(result, 15);`.
   EXPECT_EQ(result, 15);
 }
 
 TEST(ServiceMethod, TestCreateInstanceMethodHandlerMixedTypes) {
+  // General description:
+  // Verifies test create instance method handler mixed types for ServiceMethod.
+  // Arrange: prepare context for `TestComponentClass test_api_class_instance;`.
   TestComponentClass test_api_class_instance;
   auto new_method = projectairsim::Scene::GetMethod();
   projectairsim::MethodHandler test_handler = new_method.CreateMethodHandler(
       &TestComponentClass::APIMethodD, test_api_class_instance);
+  // Act: run `auto result = test_handler(R"([5, "New Name"])"_json);`.
   auto result = test_handler(R"([5, "New Name"])"_json);
+  // Assert: check result from `EXPECT_EQ(result, "Success");`.
   EXPECT_EQ(result, "Success");
 }
 
 TEST(ServiceMethod, TestCreateMethodHandlerFromClassScope) {
+  // General description:
+  // Verifies test create method handler from class scope for ServiceMethod.
+  // Arrange: prepare context for `class TestClass {`.
   class TestClass {
    public:
     TestClass() {}
@@ -97,6 +120,8 @@ TEST(ServiceMethod, TestCreateMethodHandlerFromClassScope) {
         new_method.CreateMethodHandler(&TestClass::SelfMethodA, *this);
   };
   TestClass obj;
+  // Act: run `auto result = obj.GetResult();`.
   auto result = obj.GetResult();
+  // Assert: check result from `EXPECT_EQ(result, 11);`.
   EXPECT_EQ(result, 11);
 }

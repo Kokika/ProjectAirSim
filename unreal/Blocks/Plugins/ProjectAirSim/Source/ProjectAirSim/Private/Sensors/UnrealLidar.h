@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <vector>
 
 #include "CoreMinimal.h"
@@ -154,8 +153,7 @@ UCLASS() class UUnrealLidar : public UUnrealSensor {
 
   FHitResult ShootSingleLaser(const LaserDirection& LaserDir,
                               const FVector& LidarBodyLoc,
-                              const FRotator& LidarBodyRot,
-                              const FCollisionQueryParams& TraceParams);
+                              const FRotator& LidarBodyRot);
 
   void Simulate(const float DeltaTime);
 
@@ -179,8 +177,7 @@ UCLASS() class UUnrealLidar : public UUnrealSensor {
   microsoft::projectairsim::Lidar Lidar;  // Corresponding sim sensor object
   AActor* OwnerActor;                     // Owning engine actor
   std::vector<float> PointCloud;  // Sensor returns from current simulation pass
-    std::vector<uint8_t>
-            ReturnCloud;  // Marks if points were returned for each index
+  std::vector<bool> ReturnCloud; // Marks if points were returned for each index
   std::vector<float>
       PointCloudPending;  // Sensor returns waiting to be reported
   std::vector<float> AzimuthElevationRangeCloud;  // Sensor returns from current
@@ -201,8 +198,6 @@ UCLASS() class UUnrealLidar : public UUnrealSensor {
   microsoft::projectairsim::LidarSettings Settings;  // Sensor settings
   TimeNano SimTimeDeltaReportTarget =
       0;  // Desired sensor report interval (0 = as soon as possible)
-    float LidarRangeCentimeters = 0.0f;
-    FCollisionQueryParams LaserTraceParams;
 
   bool ReportPointCloud = true;
   bool ReportAzimuthElevationRange = false;

@@ -11,6 +11,9 @@ namespace projectairsim = microsoft::projectairsim;
 // TODO: at some point we should revisit the accuracy of the
 // functions with larger error thresholds.
 TEST(GeodeticConverter, geodetic2Ecef) {
+  // General description:
+  // Verifies geodetic2 ecef for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
   auto error = projectairsim::MathUtils::eps(3);
 
@@ -21,8 +24,10 @@ TEST(GeodeticConverter, geodetic2Ecef) {
     auto alt = 0.0;
 
     double x, y, z;
+    // Act: run `geoConverter.geodetic2Ecef(lat, lon, alt, &x, &y, &z);`.
     geoConverter.geodetic2Ecef(lat, lon, alt, &x, &y, &z);
 
+    // Assert: check result from `ASSERT_NEAR(x, projectairsim::GeodeticConverter::kSemimajorAxis, error);`.
     ASSERT_NEAR(x, projectairsim::GeodeticConverter::kSemimajorAxis, error);
     ASSERT_NEAR(y, 0., error);
     ASSERT_NEAR(z, 0., error);
@@ -81,6 +86,9 @@ TEST(GeodeticConverter, geodetic2Ecef) {
 }
 
 TEST(GeodeticConverter, ecef2Geodetic) {
+  // General description:
+  // Verifies ecef2 geodetic for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
   auto error = projectairsim::MathUtils::eps(3);
 
@@ -93,8 +101,10 @@ TEST(GeodeticConverter, ecef2Geodetic) {
     double lat, lon;
     float alt;
 
+    // Act: run `geoConverter.ecef2Geodetic(x, y, z, &lat, &lon, &alt);`.
     geoConverter.ecef2Geodetic(x, y, z, &lat, &lon, &alt);
 
+    // Assert: check result from `ASSERT_NEAR(lat, 0., error);`.
     ASSERT_NEAR(lat, 0., error);
     ASSERT_NEAR(lon, 0., error);
     ASSERT_NEAR(alt, 0., error);
@@ -164,14 +174,19 @@ TEST(GeodeticConverter, ecef2Geodetic) {
 }
 
 TEST(GeodeticConverter, ecef2Ned) {
+  // General description:
+  // Verifies ecef2 ned for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
 
   // ecef and home, both at default home location LLA=0,0,0
   {
     double n, e, d;
+                          // Act: run `geoConverter.ecef2Ned(projectairsim::GeodeticConverter::kSemimajorAxis, 0.,`.
     geoConverter.ecef2Ned(projectairsim::GeodeticConverter::kSemimajorAxis, 0.,
                           0., &n, &e, &d);
 
+    // Assert: check result from `ASSERT_EQ(n, 0.);`.
     ASSERT_EQ(n, 0.);
     ASSERT_EQ(e, 0.);
     ASSERT_EQ(d, 0.);
@@ -237,13 +252,18 @@ TEST(GeodeticConverter, ecef2Ned) {
 }
 
 TEST(GeodeticConverter, ned2Ecef) {
+  // General description:
+  // Verifies ned2 ecef for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
 
   // ned at default home LLA=0,0,0
   {
     double x, y, z;
+    // Act: run `geoConverter.ned2Ecef(0., 0., 0., &x, &y, &z);`.
     geoConverter.ned2Ecef(0., 0., 0., &x, &y, &z);
 
+    // Assert: check result from `ASSERT_EQ(x, projectairsim::GeodeticConverter::kSemimajorAxis);`.
     ASSERT_EQ(x, projectairsim::GeodeticConverter::kSemimajorAxis);
     ASSERT_EQ(y, 0.);
     ASSERT_EQ(z, 0.);
@@ -302,6 +322,9 @@ TEST(GeodeticConverter, ned2Ecef) {
 }
 
 TEST(GeodeticConverter, geodetic2Ned) {
+  // General description:
+  // Verifies geodetic2 ned for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
 
   // test default home location
@@ -312,8 +335,10 @@ TEST(GeodeticConverter, geodetic2Ned) {
     geoConverter.setHome(lat, lon, alt);
 
     double n, e, d;
+    // Act: run `geoConverter.geodetic2Ned(lat, lon, alt, &n, &e, &d);`.
     geoConverter.geodetic2Ned(lat, lon, alt, &n, &e, &d);
 
+    // Assert: check result from `ASSERT_EQ(n, 0.);`.
     ASSERT_EQ(n, 0.);
     ASSERT_EQ(e, 0.);
     ASSERT_EQ(d, 0.);
@@ -358,6 +383,9 @@ TEST(GeodeticConverter, geodetic2Ned) {
 }
 
 TEST(GeodeticConverter, ned2Geodetic) {
+  // General description:
+  // Verifies ned2 geodetic for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
 
   // test default home location
@@ -368,8 +396,10 @@ TEST(GeodeticConverter, ned2Geodetic) {
 
     double lat, lon;
     float alt;
+    // Act: run `geoConverter.ned2Geodetic(n, e, d, &lat, &lon, &alt);`.
     geoConverter.ned2Geodetic(n, e, d, &lat, &lon, &alt);
 
+    // Assert: check result from `ASSERT_EQ(lat, 0.);`.
     ASSERT_EQ(lat, 0.);
     ASSERT_EQ(lon, 0.);
     ASSERT_EQ(alt, 0.f);
@@ -413,6 +443,9 @@ TEST(GeodeticConverter, ned2Geodetic) {
 }
 
 TEST(GeodeticConverter, geodetic2Enu) {
+  // General description:
+  // Verifies geodetic2 enu for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
 
   // test default home location
@@ -423,8 +456,10 @@ TEST(GeodeticConverter, geodetic2Enu) {
     geoConverter.setHome(lat, lon, alt);
 
     double e, n, u;
+    // Act: run `geoConverter.geodetic2Enu(lat, lon, alt, &e, &n, &u);`.
     geoConverter.geodetic2Enu(lat, lon, alt, &e, &n, &u);
 
+    // Assert: check result from `ASSERT_EQ(e, 0.);`.
     ASSERT_EQ(e, 0.);
     ASSERT_EQ(n, 0.);
     ASSERT_EQ(u, 0.);
@@ -466,6 +501,9 @@ TEST(GeodeticConverter, geodetic2Enu) {
 }
 
 TEST(GeodeticConverter, enu2Geodetic) {
+  // General description:
+  // Verifies enu2 geodetic for GeodeticConverter.
+  // Arrange: prepare context for `auto geoConverter = projectairsim::GeodeticConverter();`.
   auto geoConverter = projectairsim::GeodeticConverter();
   auto error = projectairsim::MathUtils::eps(4);
 
@@ -477,8 +515,10 @@ TEST(GeodeticConverter, enu2Geodetic) {
 
     double lat, lon;
     float alt;
+    // Act: run `geoConverter.enu2Geodetic(e, n, u, &lat, &lon, &alt);`.
     geoConverter.enu2Geodetic(e, n, u, &lat, &lon, &alt);
 
+    // Assert: check result from `ASSERT_EQ(lat, 0.);`.
     ASSERT_EQ(lat, 0.);
     ASSERT_EQ(lon, 0.);
     ASSERT_NEAR(alt, 0., error);

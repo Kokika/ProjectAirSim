@@ -1,10 +1,12 @@
-// Copyright (C) Microsoft Corporation.  
+// Copyright (C) Microsoft Corporation.
 // Copyright (C) 2025 IAMAI CONSULTING CORP
 //
 // MIT License. All rights reserved.
 
 #include "core_sim/sensors/camera.hpp"
 
+#include <atomic>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <queue>
@@ -18,7 +20,9 @@
 #include "json.hpp"
 #include "onnxruntime_cxx_api.h"
 #include "sensor_impl.hpp"
+#ifdef USE_TENSORRT
 #include "tensorrt_provider_factory.h"
+#endif
 
 namespace microsoft {
 namespace projectairsim {
@@ -589,17 +593,49 @@ std::vector<uint8_t> Camera::Impl::RunOnnxModelOnImages(ImageMessage imgMsg) {
   try {
     if (!camera_settings.post_process_model_settings.session_initialized) {
       logger_.LogVerbose(name_, "[%s] Entered onnx section'.", id_.c_str());
+      auto throw_on_onnx_status = [](OrtStatus* status,
+                                     const char* provider_name) {
+        if (status == nullptr) {
+          return;
+        }
+
+        std::string error_message =
+            std::string("Failed to add ONNX execution provider ") +
+            provider_name + ": " + Ort::GetApi().GetErrorMessage(status);
+        Ort::GetApi().ReleaseStatus(status);
+        throw Error(error_message);
+      };
+
       if (camera_settings.post_process_model_settings.execution_provider ==
           "cuda") {
+#ifdef USE_CUDA
         logger_.LogVerbose(name_, "Trying to add CUDA EP since it is enabled.");
-        OrtSessionOptionsAppendExecutionProvider_CUDA(onnx_.session_options, 0);
+        throw_on_onnx_status(OrtSessionOptionsAppendExecutionProvider_CUDA(
+                                 onnx_.session_options, 0),
+                             "CUDA");
         logger_.LogVerbose(name_, "onnx CUDA session declared");
+#else
+        logger_.LogWarning(
+            name_,
+            "ONNX execution provider 'cuda' requested, but this build does "
+            "not include CUDA support. Falling back to CPU.");
+#endif
       } else if (camera_settings.post_process_model_settings
                      .execution_provider == "tensorrt") {
-        OrtSessionOptionsAppendExecutionProvider_Tensorrt(onnx_.session_options,
-                                                          0);
-        OrtSessionOptionsAppendExecutionProvider_CUDA(onnx_.session_options, 0);
+#if defined(USE_TENSORRT) && defined(USE_CUDA)
+        throw_on_onnx_status(OrtSessionOptionsAppendExecutionProvider_Tensorrt(
+                                 onnx_.session_options, 0),
+                             "TensorRT");
+        throw_on_onnx_status(OrtSessionOptionsAppendExecutionProvider_CUDA(
+                                 onnx_.session_options, 0),
+                             "CUDA");
         logger_.LogVerbose(name_, "onnx TensorRT session declared");
+#else
+        logger_.LogWarning(
+            name_,
+            "ONNX execution provider 'tensorrt' requested, but this build "
+            "does not include TensorRT/CUDA support. Falling back to CPU.");
+#endif
       }
       logger_.LogVerbose(name_, "onnx Creating session");
       auto model_file = camera_settings.post_process_model_settings.filepath;

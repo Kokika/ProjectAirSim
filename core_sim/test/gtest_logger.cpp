@@ -22,9 +22,14 @@ void TestLog(
         log_func);
 
 TEST(Logger, Constructor) {
+                     // Act: run `auto callback = [](const std::string& component, projectairsim::LogLevel level,`.
+  // General description:
+  // Verifies constructor for Logger.
+  // Arrange: prepare context for `auto callback = [](const std::string& component, projectairsim::LogLevel level,`.
   auto callback = [](const std::string& component, projectairsim::LogLevel level,
                      const std::string& message) {};
 
+  // Assert: check result from `EXPECT_NE(std::make_unique<projectairsim::Logger>(`.
   EXPECT_NE(std::make_unique<projectairsim::Logger>(
                 callback, projectairsim::LogLevel::kVerbose),
             nullptr);
@@ -48,50 +53,73 @@ TEST(Logger, Constructor) {
 }
 
 TEST(Logger, LogFatal) {
+  // General description:
+  // Verifies log fatal for Logger.
+  // Arrange: prepare context for `TestLog(projectairsim::LogLevel::kFatal,`.
   TestLog(projectairsim::LogLevel::kFatal,
           [](projectairsim::Logger& logger, std::string component,
              const char* format) { logger.LogFatal(component, format); });
 
   TestLog(
       projectairsim::LogLevel::kFatal,
+         // Act: run `[](projectairsim::Logger& logger, std::string component, const char* format,`.
       [](projectairsim::Logger& logger, std::string component, const char* format,
          int value) { logger.LogFatal(component, format, value); });
+  // Assert: check result from `}`.
 }
 
 TEST(Logger, LogError) {
+  // General description:
+  // Verifies log error for Logger.
+  // Arrange: prepare context for `TestLog(projectairsim::LogLevel::kError,`.
   TestLog(projectairsim::LogLevel::kError,
           [](projectairsim::Logger& logger, std::string component,
              const char* format) { logger.LogError(component, format); });
 
   TestLog(
       projectairsim::LogLevel::kError,
+         // Act: run `[](projectairsim::Logger& logger, std::string component, const char* format,`.
       [](projectairsim::Logger& logger, std::string component, const char* format,
          int value) { logger.LogError(component, format, value); });
+  // Assert: check result from `}`.
 }
 
 TEST(Logger, LogWarning) {
+  // General description:
+  // Verifies log warning for Logger.
+  // Arrange: prepare context for `TestLog(projectairsim::LogLevel::kWarning,`.
   TestLog(projectairsim::LogLevel::kWarning,
           [](projectairsim::Logger& logger, std::string component,
              const char* format) { logger.LogWarning(component, format); });
 
   TestLog(
       projectairsim::LogLevel::kWarning,
+         // Act: run `[](projectairsim::Logger& logger, std::string component, const char* format,`.
       [](projectairsim::Logger& logger, std::string component, const char* format,
          int value) { logger.LogWarning(component, format, value); });
+  // Assert: check result from `}`.
 }
 
 TEST(Logger, LogTrace) {
+  // General description:
+  // Verifies log trace for Logger.
+  // Arrange: prepare context for `TestLog(projectairsim::LogLevel::kTrace,`.
   TestLog(projectairsim::LogLevel::kTrace,
           [](projectairsim::Logger& logger, std::string component,
              const char* format) { logger.LogTrace(component, format); });
 
   TestLog(
       projectairsim::LogLevel::kTrace,
+         // Act: run `[](projectairsim::Logger& logger, std::string component, const char* format,`.
       [](projectairsim::Logger& logger, std::string component, const char* format,
          int value) { logger.LogTrace(component, format, value); });
+  // Assert: check result from `}`.
 }
 
 TEST(Logger, LogVerbose) {
+  // General description:
+  // Verifies log verbose for Logger.
+  // Arrange: prepare context for `TestLog(projectairsim::LogLevel::kVerbose,`.
   TestLog(projectairsim::LogLevel::kVerbose,
           [](projectairsim::Logger& logger, std::string component,
              const char* format) { logger.LogVerbose(component, format); });
@@ -102,8 +130,10 @@ TEST(Logger, LogVerbose) {
          int value) { logger.LogVerbose(component, format, value); });
 
   int count = 0;
+                      // Act: run `auto callback = [&](const std::string& component, projectairsim::LogLevel level,`.
   auto callback = [&](const std::string& component, projectairsim::LogLevel level,
                       const std::string& message) {
+    // Assert: check result from `EXPECT_EQ(message, "");`.
     EXPECT_EQ(message, "");
     count++;
   };
@@ -137,10 +167,15 @@ TEST(Logger, LogVerbose) {
 }
 
 TEST(Logger, GetLogLevel) {
+  // General description:
+  // Verifies get log level for Logger.
+  // Arrange: prepare context for `auto callback = [](const std::string& component, projectairsim::LogLevel level,`.
   auto callback = [](const std::string& component, projectairsim::LogLevel level,
                      const std::string& message) {};
+  // Act: run `projectairsim::Logger logger(callback);`.
   projectairsim::Logger logger(callback);
 
+  // Assert: check result from `EXPECT_EQ(logger.GetLogLevel(), projectairsim::LogLevel::kError);`.
   EXPECT_EQ(logger.GetLogLevel(), projectairsim::LogLevel::kError);
 
   logger.SetLogLevel(projectairsim::LogLevel::kFatal);
@@ -160,6 +195,9 @@ TEST(Logger, GetLogLevel) {
 }
 
 TEST(Logger, SetLogLevel) {
+  // General description:
+  // Verifies set log level for Logger.
+  // Arrange: prepare context for `int count = 0;`.
   int count = 0;
 
   auto callback = [&](const std::string& component, projectairsim::LogLevel level,
@@ -169,7 +207,9 @@ TEST(Logger, SetLogLevel) {
 
   logger.SetLogLevel(projectairsim::LogLevel::kFatal);
   count = 0;
+  // Act: run `logger.LogFatal("test", "message");`.
   logger.LogFatal("test", "message");
+  // Assert: check result from `EXPECT_EQ(count, 1);`.
   EXPECT_EQ(count, 1);
   count = 0;
   logger.LogError("test", "message");

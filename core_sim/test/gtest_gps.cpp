@@ -50,29 +50,44 @@ namespace projectairsim = microsoft::projectairsim;
 using json = nlohmann::json;
 
 TEST(Gps, SetsGpsID) {
+  // General description:
+  // Verifies sets gps id for Gps.
+  // Arrange: prepare context for `const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();`.
   const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();
   const auto& id = gps_json["id"];
   const auto& is_enabled = gps_json["enabled"];
   const auto& parent_link = gps_json["parent-link"];
+  // Act: run `auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);`.
   auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(gps.GetId(), std::string("Gps1"));`.
   EXPECT_EQ(gps.GetId(), std::string("Gps1"));
 }
 
 TEST(Gps, SetsSensorType) {
+  // General description:
+  // Verifies sets sensor type for Gps.
+  // Arrange: prepare context for `const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();`.
   const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();
   const auto& id = gps_json["id"];
   const auto& is_enabled = gps_json["enabled"];
   const auto& parent_link = gps_json["parent-link"];
+  // Act: run `auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);`.
   auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(gps.GetType(), projectairsim::SensorType::kGps);`.
   EXPECT_EQ(gps.GetType(), projectairsim::SensorType::kGps);
 }
 
 TEST(Gps, SetsIsEnabled) {
+  // General description:
+  // Verifies sets is enabled for Gps.
+  // Arrange: prepare context for `const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();`.
   const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();
   const auto& id = gps_json["id"];
   auto is_enabled = gps_json["enabled"];
   const auto& parent_link = gps_json["parent-link"];
+  // Act: run `auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);`.
   auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(gps.IsEnabled(), true);`.
   EXPECT_EQ(gps.IsEnabled(), true);
   is_enabled = false;
   gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
@@ -80,11 +95,16 @@ TEST(Gps, SetsIsEnabled) {
 }
 
 TEST(Gps, SetsParentLink) {
+  // General description:
+  // Verifies sets parent link for Gps.
+  // Arrange: prepare context for `const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();`.
   const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();
   const auto& id = gps_json["id"];
   const auto& is_enabled = gps_json["enabled"];
   auto parent_link = gps_json["parent-link"];
+  // Act: run `auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);`.
   auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(gps.GetParentLink(), std::string("ParentLink"));`.
   EXPECT_EQ(gps.GetParentLink(), std::string("ParentLink"));
   parent_link = std::string("NEW-PARENT-LINK-123");
   gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
@@ -92,21 +112,31 @@ TEST(Gps, SetsParentLink) {
 }
 
 TEST(Gps, LoadsGps) {
+  // General description:
+  // Verifies loads gps for Gps.
+  // Arrange: prepare context for `const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();`.
   const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();
   const auto& id = gps_json["id"];
   const auto& is_enabled = gps_json["enabled"];
   const auto& parent_link = gps_json["parent-link"];
   auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
+  // Act: run `projectairsim::Robot::LoadGps(gps, gps_json);`.
   projectairsim::Robot::LoadGps(gps, gps_json);
+  // Assert: check result from `EXPECT_EQ(gps.IsLoaded(), true);`.
   EXPECT_EQ(gps.IsLoaded(), true);
 }
 
 TEST(Gps, SetsIsLoaded) {
+  // General description:
+  // Verifies sets is loaded for Gps.
+  // Arrange: prepare context for `const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();`.
   const auto gps_json = projectairsim::Robot::GetBasicGpsConfig();
   const auto& id = gps_json["id"];
   const auto& is_enabled = gps_json["enabled"];
   const auto& parent_link = gps_json["parent-link"];
+  // Act: run `auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);`.
   auto gps = projectairsim::Robot::MakeGps(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(gps.IsLoaded(), false);`.
   EXPECT_EQ(gps.IsLoaded(), false);
   projectairsim::Robot::LoadGps(gps, gps_json);
   EXPECT_EQ(gps.IsLoaded(), true);

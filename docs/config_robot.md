@@ -12,6 +12,43 @@ An array of **sensors** can configure various types of sensors such as cameras, 
 
 Project AirSim currently comes with some base configurations for quadrotor drones to demonstrate how to configure a robot for simulation.
 
+## Modular Configuration (Combining Multiple JSON Files)
+
+**Robot configurations support mixing multiple JSON files into a single combined configuration.** Instead of maintaining separate complete configuration files for every variation of your robot, you can compose configurations from modular components:
+
+> **Note:** The modular filenames in the following example are placeholders and are not files provided by this repository. Create these JSONC files in the client script's `sim_config/` folder, or substitute filenames for configuration files that exist there.
+
+``` json
+// In your scene config file:
+"actors": [
+  {
+    "type": "robot",
+    "name": "Drone1",
+    "origin": {...},
+    // Single file approach:
+    "robot-config": "robot_complete_config.jsonc"
+    
+    // OR modular approach - combine multiple files:
+    "robot-config": [
+      "robot_base_quadrotor.jsonc",      // Base vehicle structure
+      "sensors_camera_lidar.jsonc",       // Sensor configuration
+      "controller_px4.jsonc"              // Controller settings
+    ]
+  }
+]
+```
+
+**How it works:** When an array of config files is provided, they are loaded in order and merged together. Later files override properties from earlier files. This enables:
+
+- **Reusability:** Create base configurations and mix in different sensor packages or controllers
+- **Maintainability:** Update a sensor package once and it applies to all robots using it
+- **Flexibility:** Easily swap components without duplicating entire configurations
+
+**Example use cases:**
+- Base vehicle + different sensor packages for different missions
+- Shared physical properties + different controllers (SimpleFlightAPI vs PX4)
+- Common sensor suite + different vehicle types
+
 ## Robot configuration overview (drone example)
 
 `robot_quadrotor_fastphysics.jsonc`
@@ -43,7 +80,7 @@ Project AirSim currently comes with some base configurations for quadrotor drone
 "physics-type": "non-physics"
 ```
 
-**Non-physics** mode means that the robot will not move unless its pose is set directly with API calls from the client. This can be useful for "Computer Vision" mode to gather sensor data at manually-specified poses in the simulation world, or if the robot's motion will be determined by an external algorithm.
+**[No Physics](physics/no_physics.md)** mode means that the robot will not move unless its pose is set directly with API calls from the client. This can be useful for "Computer Vision" mode to gather sensor data at manually-specified poses in the simulation world, or if the robot's motion will be determined by an external algorithm.
 
 ### Fast Physics
 
@@ -51,17 +88,8 @@ Project AirSim currently comes with some base configurations for quadrotor drone
 "physics-type": "fast-physics"
 ```
 
-**[Fast Physics](physics/fast_physics.md)** is a basic light-weight physics model made for aerial drone flight. Fast Physics makes it easy to get started with flying a drone out-of-the-box.
+**[Fast Physics](physics/fast-physics.md)** (`fast-physics`) is a basic light-weight physics model made for aerial drone flight. It makes it easy to get started with flying a drone out-of-the-box.
 
-### Unreal Physics
-
-``` json
-"physics-type": "unreal-physics"
-```
-
-**[Unreal physics](tbd)** uses the **[PhysX](https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/guide/Manual/Introduction.html)** engine that's built-in to Unreal. PhysX can calculate motion for multi-jointed robots with constraints on each joint, as well as rigid body dynamics for aerial drone flight.
-
-*Note: The simulation will automatically detect when any actor in the scene is configured to use Unreal Physics, and this will link the physics calculation step to Unreal's rendering step, so the [sim clock setting](config_scene.md#steppable-clock) for `step-ns` may need to be much slower (20 ms = ~50 FPS) to maintain reasonable simulation advancement rate.*
 
 ## Link settings
 
@@ -269,7 +297,7 @@ A joint is a connection between two links (a single parent link and a single chi
 | `limit` | float | Rotation angle limit in **radians**. |
 | `damping-constant` | float | Damping coefficient for rotation motion over time. |
 
-Example of fixed joint for drone propellers using **[Fast Physics](physics/fast_physics.md)** which visually rotates the propeller meshes without using joint physics:
+Example of fixed joint for drone propellers using **[Fast Physics](physics/fast-physics.md)** which visually rotates the propeller meshes without using joint physics:
 
 ``` json
 "joints": [
@@ -279,26 +307,6 @@ Example of fixed joint for drone propellers using **[Fast Physics](physics/fast_
     "parent-link": "Frame",
     "child-link": "Prop_FL",
     "axis": "0 0 1"
-  },
-  ...
-]
-```
-
-Example of continuous rotation joint for drone propellers using **[Unreal Physics](internal/physics/unreal_physics.md)** which rotates the propeller meshes using some applied torque on the propellers:
-
-``` json
-"joints": [
-  {
-    "id": "Frame_Prop_FL",
-    "origin": {
-      "xyz": "0.253 -0.253 -0.01",
-      "rpy-deg": "0 0 0"
-    },
-    "type": "continuous",
-    "parent-link": "Frame",
-    "child-link": "Prop_FL",
-    "axis": "0 0 1",
-    "damping-constant": 1
   },
   ...
 ]
@@ -320,10 +328,11 @@ A controller is used to decide how to command the robot's actuators in order to 
 | Parameter | Value | Description |
 | --------- | ----- | ----------- |
 | `id` | string | Name identifier for the controller. |
-| `airframe-setup` | string | Type of airframe. Simple Flight currently supports `quadrotor-x`, `hexarotor-x`, `vtol-quad-x-tailsitter`, and `vtol-quad-tiltrotor`, defaulting to `quadrotor-x` if omitted. PX4 ignores this setting because the airframe type is determined by the PX4 firmware that is running. |
-| `type` | string | Type of the controller. Currently, **[`simple-flight-api`](controllers/simple_flight.md)**, **[`px4-api`](controllers/px4/px4.md)**, and `manual-controller-api` are supported. |
+| `airframe-setup` | string | Type of airframe. Simple Flight currently supports `quadrotor-x`, `hexarotor-x`, `vtol-quad-x-tailsitter`, and `vtol-quad-tiltrotor`, defaulting to `quadrotor-x` if omitted. PX4 and ArduPilot obtain the airframe type from their running firmware. |
+| `type` | string | Type of the controller. Currently, **[`simple-flight-api`](controllers/simple_flight.md)**, **[`px4-api`](controllers/px4/px4.md)**, **[`ardupilot-api`](controllers/ardupilot.md)**, and `manual-controller-api` are supported. |
 | `simple-flight-api-settings` | See [Simple Flight settings](#simple-flight-settings) | Settings specific to the `simple-flight-api` controller type. |
 | `px4-settings` | See [PX4 settings](#px4-settings) | Settings specific to the `px4-api` controller type. |
+| `ardupilot-settings` | See [ArduPilot settings](#ardupilot-settings) | Settings specific to the `ardupilot-api` controller type. |
 | `manual-controller-api-settings` | See [Manual Controller settings](#manual-controller-settings) | Settings specific to the `manual-controller-api` controller type. |
 
 ### Simple Flight settings
@@ -341,6 +350,34 @@ The `simple-flight-api-settings` collection contains the settings for the Simple
 | Parameter | Value | Description |
 | --------- | ----- | ----------- |
 | `actuator-order` | Array of actuator `id` tags | The actuator name identifiers to link to the controller's commanded outputs.  See [Actuator order settings](#actuator-order-settings) below for the order. |
+
+### ArduPilot settings
+
+The `ardupilot-settings` collection contains the settings for the ArduPilot SITL controller:
+
+```json
+"ardupilot-settings": {
+  "local-host-ip": "127.0.0.1",
+  "ardupilot-ip": "127.0.0.1",
+  "ardupilot-udp-port": 9003,
+  "local-host-udp-port": 9002,
+  "use-distance-sensor": true,
+  "actuator-order": [
+    ...
+  ]
+}
+```
+
+| Parameter | Value | Description |
+| --------- | ----- | ----------- |
+| `local-host-ip` | string | IP address of the Project AirSim network adapter used for the ArduPilot UDP connection. Usually `127.0.0.1` when both run on the same computer. |
+| `ardupilot-ip` | string | IP address of the host running ArduPilot. Usually `127.0.0.1` when both run on the same computer. |
+| `ardupilot-udp-port` | integer | UDP port on the ArduPilot host. The supplied examples use `9003`. |
+| `local-host-udp-port` | integer | UDP port on the Project AirSim host. The supplied examples use `9002`. |
+| `use-distance-sensor` | bool | Sends distance-sensor data to ArduPilot when true. |
+| `actuator-order` | Array of actuator `id` tags | Ordered actuator identifiers linked to ArduPilot control outputs. See [Actuator order settings](#actuator-order-settings). |
+
+See [ArduPilot Flight Controller](controllers/ardupilot.md) for SITL setup, networking, and example flight sessions.
 
 ### PX4 settings
 
@@ -362,7 +399,7 @@ The `px4-settings` collection contains the settings for the PX4 flight controlle
   "parameters": {
     "NAV_RCL_ACT": 0,
     "NAV_DLL_ACT": 0,
-    "COM_OBL_ACT": 1,
+    "COM_OBL_RC_ACT": 1,
     "LPE_LAT": 47.641468,
     "LPE_LON": -122.140165
   },
@@ -439,7 +476,7 @@ Project AirSim's GCS proxy also allows the GCS application can be run on a remot
 
 ### Actuator order settings
 
-Under `simple-flight-api-settings` and `px4-settings` this array maps the control outputs from the controller to the robot's actuators.
+Under `simple-flight-api-settings`, `px4-settings`, and `ardupilot-settings`, this array maps controller outputs to the robot's actuators.
 
 ``` json
 "simple-flight-api-settings": {

@@ -52,29 +52,44 @@ namespace projectairsim = microsoft::projectairsim;
 using json = nlohmann::json;
 
 TEST(Airspeed, SetsAirspeedID) {
+  // General description:
+  // Verifies sets airspeed id for Airspeed.
+  // Arrange: prepare context for `const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();`.
   const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();
   const auto& id = airspeed_json["id"];
   const auto& is_enabled = airspeed_json["enabled"];
   const auto& parent_link = airspeed_json["parent-link"];
+  // Act: run `auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);`.
   auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(airspeed.GetId(), std::string("Airspeed1"));`.
   EXPECT_EQ(airspeed.GetId(), std::string("Airspeed1"));
 }
 
 TEST(Airspeed, SetsSensorType) {
+  // General description:
+  // Verifies sets sensor type for Airspeed.
+  // Arrange: prepare context for `const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();`.
   const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();
   const auto& id = airspeed_json["id"];
   const auto& is_enabled = airspeed_json["enabled"];
   const auto& parent_link = airspeed_json["parent-link"];
+  // Act: run `auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);`.
   auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(airspeed.GetType(), projectairsim::SensorType::kAirspeed);`.
   EXPECT_EQ(airspeed.GetType(), projectairsim::SensorType::kAirspeed);
 }
 
 TEST(Airspeed, SetsIsEnabled) {
+  // General description:
+  // Verifies sets is enabled for Airspeed.
+  // Arrange: prepare context for `const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();`.
   const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();
   const auto& id = airspeed_json["id"];
   auto is_enabled = airspeed_json["enabled"];
   const auto& parent_link = airspeed_json["parent-link"];
+  // Act: run `auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);`.
   auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(airspeed.IsEnabled(), true);`.
   EXPECT_EQ(airspeed.IsEnabled(), true);
   is_enabled = false;
   airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
@@ -82,11 +97,16 @@ TEST(Airspeed, SetsIsEnabled) {
 }
 
 TEST(Airspeed, SetsParentLink) {
+  // General description:
+  // Verifies sets parent link for Airspeed.
+  // Arrange: prepare context for `const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();`.
   const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();
   const auto& id = airspeed_json["id"];
   const auto& is_enabled = airspeed_json["enabled"];
   auto parent_link = airspeed_json["parent-link"];
+  // Act: run `auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);`.
   auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(airspeed.GetParentLink(), std::string("ParentLink"));`.
   EXPECT_EQ(airspeed.GetParentLink(), std::string("ParentLink"));
   parent_link = std::string("NEW-PARENT-LINK-123");
   airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
@@ -94,21 +114,31 @@ TEST(Airspeed, SetsParentLink) {
 }
 
 TEST(Airspeed, LoadsAirspeed) {
+  // General description:
+  // Verifies loads airspeed for Airspeed.
+  // Arrange: prepare context for `const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();`.
   const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();
   const auto& id = airspeed_json["id"];
   const auto& is_enabled = airspeed_json["enabled"];
   const auto& parent_link = airspeed_json["parent-link"];
   auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
+  // Act: run `projectairsim::Robot::LoadAirspeed(airspeed, airspeed_json);`.
   projectairsim::Robot::LoadAirspeed(airspeed, airspeed_json);
+  // Assert: check result from `EXPECT_EQ(airspeed.IsLoaded(), true);`.
   EXPECT_EQ(airspeed.IsLoaded(), true);
 }
 
 TEST(Airspeed, SetsIsLoaded) {
+  // General description:
+  // Verifies sets is loaded for Airspeed.
+  // Arrange: prepare context for `const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();`.
   const auto airspeed_json = projectairsim::Robot::GetBasicAirspeedConfig();
   const auto& id = airspeed_json["id"];
   const auto& is_enabled = airspeed_json["enabled"];
   const auto& parent_link = airspeed_json["parent-link"];
+  // Act: run `auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);`.
   auto airspeed = projectairsim::Robot::MakeAirspeed(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(airspeed.IsLoaded(), false);`.
   EXPECT_EQ(airspeed.IsLoaded(), false);
   projectairsim::Robot::LoadAirspeed(airspeed, airspeed_json);
   EXPECT_EQ(airspeed.IsLoaded(), true);

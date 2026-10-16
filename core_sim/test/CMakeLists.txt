@@ -20,6 +20,7 @@ set(CORE_SIM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(
     ${TARGET_NAME}
+    EXCLUDE_FROM_ALL
     gtest_logger.cpp
     gtest_string_utils.cpp
     gtest_transform_utils.cpp
@@ -28,6 +29,7 @@ add_executable(
     gtest_simulator.cpp
     gtest_scene.cpp
     gtest_robot.cpp
+    gtest_control_mapper.cpp
     gtest_env_actor.cpp
     gtest_trajectory.cpp
     gtest_link.cpp
@@ -41,14 +43,29 @@ add_executable(
     gtest_airspeed.cpp
     gtest_barometer.cpp
     gtest_magnetometer.cpp
+    gtest_battery.cpp
     gtest_actuator.cpp
+    gtest_gimbal.cpp
+    gtest_tilt.cpp
+    gtest_rotor_setting.cpp
+    gtest_wheel_setting.cpp
+    gtest_unreal_vehicle_actuator.cpp
+    gtest_noise_model_utils.cpp
     gtest_clock.cpp
+    gtest_clock_message.cpp
     gtest_message.cpp
+    gtest_image_message.cpp
+    gtest_topic_manager.cpp
+    gtest_battery_message.cpp
+    gtest_pose_message.cpp
+    gtest_kinematics_message.cpp
+    gtest_rotor_message.cpp
     gtest_service_method.cpp
     gtest_lidar.cpp
     gtest_gps.cpp
     gtest_geodetic_converter.cpp
     gtest_radar.cpp
+    gtest_coordinate_integration.cpp
 )
 
 set_target_properties(
@@ -59,13 +76,21 @@ set_target_properties(
 
 if(WIN32)
     add_dependencies(${TARGET_NAME} core_sim nng-external gtest_main)
+elseif(APPLE)
+    add_dependencies(${TARGET_NAME} core_sim nng-external gtest_main)
 else()
     add_dependencies(${TARGET_NAME} core_sim nng-external openssl-external gtest_main)
 endif()
 
 # Set up nng and openssl for linking
 target_link_directories(${TARGET_NAME} PRIVATE ${NNG_LIB_DIR} ${OPENSSL_LIB_DIR})
-target_compile_definitions(${TARGET_NAME} PRIVATE NNG_STATIC_LIB=ON OPENSSL_STATIC_LIB=ON)
+target_compile_definitions(
+    ${TARGET_NAME}
+    PRIVATE
+        NNG_STATIC_LIB=ON
+        OPENSSL_STATIC_LIB=ON
+        PROJECTAIRSIM_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
 
 if(WIN32)
 target_include_directories(
@@ -108,7 +133,8 @@ if(WIN32)
             Bcrypt # Client authorization
             Crypt32 # Client authorization
             Ncrypt # Client authorization
-            lvmon
+            $<$<BOOL:${PROJECTAIRSIM_ENABLE_LVMON}>:lvmon>
+            jsbsim
     )
 else()
     target_link_libraries(
@@ -117,21 +143,15 @@ else()
             gtest_main
             core_sim
             nng
-            crypto # Client authorization
+            ${OPENSSL_CRYPTO_LIBRARY} # Client authorization
+            jsbsim
     )
 endif()
 
 
 target_include_directories(${TARGET_NAME} PRIVATE "${ONNXRUNTIME_ROOTDIR}/include")
 target_link_directories(${TARGET_NAME} PRIVATE "${ONNX_LIB_DIR}")
-target_link_libraries(${TARGET_NAME} PRIVATE onnxruntime)
-
-
-add_custom_command(
-    TARGET ${TARGET_NAME}
-    PRE_LINK
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${UE_PLUGIN_SIMLIBS_DIR}/shared_libs/ ${SIMLIBS_TEST_DIR}
-)
+target_link_libraries(${TARGET_NAME} PRIVATE onnxruntime jsbsim)
 
 # Include CMake's GoogleTest module to use gtest_discover_tests() helper
 include(GoogleTest)

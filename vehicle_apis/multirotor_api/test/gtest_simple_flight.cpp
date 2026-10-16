@@ -16,6 +16,9 @@
 namespace projectairsim = microsoft::projectairsim;
 
 TEST(SimpleFlight, Constructor) {
+  // General description:
+  // Verifies constructor for SimpleFlight.
+  // Arrange: prepare context for `auto params = std::make_unique<simple_flight::Params>();`.
   auto params = std::make_unique<simple_flight::Params>();
   auto board =
       std::make_unique<projectairsim::AirSimSimpleFlightBoard>(params.get());
@@ -25,7 +28,9 @@ TEST(SimpleFlight, Constructor) {
   auto state_estimator_fw =
       std::make_unique<projectairsim::AirSimSimpleFlightEstimatorFW>();
   auto firmware = std::make_unique<simple_flight::Firmware>(
+      // Act: run `params.get(), board.get(), comm_link.get(), state_estimator.get(),`.
       params.get(), board.get(), comm_link.get(), state_estimator.get(),
       state_estimator_fw.get());
+  // Assert: check result from `EXPECT_NE(firmware, nullptr);`.
   EXPECT_NE(firmware, nullptr);
 }

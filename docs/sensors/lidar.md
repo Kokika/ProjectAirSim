@@ -87,6 +87,7 @@ The possible `lidar-type` values and their descriptions are:
 | Value | Description |
 | ----- | ----------- |
 | `generic_cylindrical` | The sensor scans a cylindrical volume. |
+| `depth_lidar` | The sensor generates a cylindrical lidar-style scan by sampling explicit beams from a rendered depth image. |
 | `generic_rosette` | The sensor beams scan a conical volume with a hypotrochoid curve. |
 | `livox_mid70` | The sensor simulates a Livox Mid-70 lidar sensor.
 | `livox_avia` | The sensor simulates a Livox Avia lidar sensor.
@@ -104,6 +105,41 @@ The positions in polar coordinates of the points sampled from the rosette patter
 The polar radius is mapped to the vertical FOV.  The radius of the tracing point is automatically set so that the polar radius ranges from 0.0 to 1.0.  A polar radius of 0.0 corresponds to `vertical-fov-lower-deg` while a polar radius of 1.0 corresponds to `vertical-fov-upper-deg`.
 
 The `radial-scaling` setting fine-tunes the shape of the scanning pattern curve by scaling the tracing point's angular offset from the rolling circle center's angular position (as seen from fixed circle's center,) causing the tracing point to travel in an ovoidal path around the rolling circle.  A value of "1.0" (the default) leaves the curve unmodified.  A value greater the 1.0 "stretches" the position of the tracing point away from the center of the rolling circle along the radial path around the center of the fixed circle.  A value less than 1.0 compresses the tracing point's position towards the center of the rolling circle.  A hypotrochoid curve typically has "petals" and values greater than 1.0 widens those petals while values less than 1.0 narrows them.
+
+### Depth lidar type
+The `depth_lidar` type uses a depth camera in Unreal to generate a lidar-style point cloud. Instead of treating every depth pixel as a return, it samples explicit horizontal and vertical beams based on the configured `points-per-second`, `number-of-channels`, and FOV settings. This makes the scan behavior closer to a real cylindrical lidar pattern while still relying on rendered depth.
+
+This type uses the same core cylindrical lidar settings as `generic_cylindrical`, including `number-of-channels`, `horizontal-rotation-frequency`, `horizontal-fov-*-deg`, and `vertical-fov-*-deg`.
+
+A typical `depth_lidar` config looks like this:
+```json
+{
+"sensors": [
+  {
+    "id": "lidar1",
+    "type": "lidar",
+    "enabled": true,
+    "parent-link": "LidarMountPoint",
+    "lidar-type": "depth_lidar",
+    "number-of-channels": 32,
+    "range": 100,
+    "points-per-second": 180000,
+    "report-frequency": 0,
+    "horizontal-rotation-frequency": 10.0,
+    "horizontal-fov-start-deg": -45.0,
+    "horizontal-fov-end-deg": 45.0,
+    "vertical-fov-lower-deg": -10.0,
+    "vertical-fov-upper-deg": 10.0,
+    "disable-self-hits": true,
+    "draw-debug-points": false,
+    "origin": {
+      "xyz": "0 0 1.0",
+      "rpy-deg": "0 0 0"
+    }
+  }
+]
+}
+```
 
 ### Livox Mid-70 lidar type
 The `livox_mid70` lidar type simulates the Livox Mid-70 lidar sensor (https://www.livoxtech.com/mid-70).  It is based on the `generic_rosette` lidar type with appropriate default values for the Mid-70 thus none of the lidar characteristic settings such as `number-of-channels` or `horizontal-rotation-frequency` need to be specified.  These settings can still be specified, for instance, to tweak the sensor to better match an actual unit or simulate a closely related but slightly different model.
@@ -128,7 +164,6 @@ A standard `livox_mid70` config would be similar to this:
 ```
 
 ---
-
 Copyright (C) Microsoft Corporation.  
 Copyright (C) 2025 IAMAI CONSULTING CORP
 

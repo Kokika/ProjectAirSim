@@ -12,19 +12,27 @@
 namespace projectairsim = microsoft::projectairsim;
 
 TEST(TransformTree, Register) {
+  // General description:
+  // Verifies register for TransformTree.
   // Test basic registration
+  // Arrange: prepare context for `projectairsim::TransformTree::StaticRefFrame staticrefframeA("A");`.
   projectairsim::TransformTree::StaticRefFrame staticrefframeA("A");
   projectairsim::TransformTree transformtree;
   projectairsim::Pose poseA;
   projectairsim::Pose poseGlobal;
+                         // Act: run `transformtree.Register(&staticrefframeA,`.
 
   transformtree.Register(&staticrefframeA,
                          projectairsim::TransformTree::kRefFrameGlobal);
+  // Assert: check result from `}`.
 }
 
 TEST(TransformTree, Convert) {
+  // General description:
+  // Verifies convert for TransformTree.
   // Test basic conversion from a reference frame that's an immediate child of
   // the global reference frame to the global reference frame
+  // Arrange: prepare context for `constexpr float ap_x = 1.0f;`.
   constexpr float ap_x = 1.0f;
   constexpr float ap_y = 2.0f;
   constexpr float ap_z = 3.0f;
@@ -41,11 +49,13 @@ TEST(TransformTree, Convert) {
   transformtree.Register(&staticrefframeA,
                          projectairsim::TransformTree::kRefFrameGlobal);
   transformtree.Convert(poseA, staticrefframeA,
+                        // Act: run `projectairsim::TransformTree::kRefFrameGlobal,`.
                         projectairsim::TransformTree::kRefFrameGlobal,
                         &poseGlobal);
 
   // Verify the identity pose in A's reference frame is transformed into A's
   // pose in the global reference frame
+  // Assert: check result from `EXPECT_FLOAT_EQ(poseGlobal.position.x(), ap_x);`.
   EXPECT_FLOAT_EQ(poseGlobal.position.x(), ap_x);
   EXPECT_FLOAT_EQ(poseGlobal.position.y(), ap_y);
   EXPECT_FLOAT_EQ(poseGlobal.position.z(), ap_z);
@@ -57,6 +67,9 @@ TEST(TransformTree, Convert) {
 }
 
 TEST(TransformTree, NonzeroRelativePositionAndTiltedFrame) {
+  // General description:
+  // Verifies nonzero relative position and tilted frame for TransformTree.
+  // Arrange: prepare context for `constexpr float ap_x = 0.0f;`.
   constexpr float ap_x = 0.0f;
   constexpr float ap_y = 0.0f;
   constexpr float ap_z = 0.0f;
@@ -74,11 +87,13 @@ TEST(TransformTree, NonzeroRelativePositionAndTiltedFrame) {
   transformtree.Register(&staticrefframeA,
                          projectairsim::TransformTree::kRefFrameGlobal);
   transformtree.Convert(poseA, staticrefframeA,
+                        // Act: run `projectairsim::TransformTree::kRefFrameGlobal,`.
                         projectairsim::TransformTree::kRefFrameGlobal,
                         &poseGlobal);
 
   // Verify the identity pose in A's reference frame is transformed into A's
   // pose in the global reference frame
+  // Assert: check result from `EXPECT_FLOAT_EQ(poseGlobal.position.x(), ap_x);`.
   EXPECT_FLOAT_EQ(poseGlobal.position.x(), ap_x);
   EXPECT_NEAR(poseGlobal.position.y(), -(std::sin(M_PI / 4)), 1.0e-6);
   EXPECT_NEAR(poseGlobal.position.z(), (std::cos(M_PI / 4)), 1.0e-6);
@@ -90,8 +105,11 @@ TEST(TransformTree, NonzeroRelativePositionAndTiltedFrame) {
 }
 
 TEST(TransformTree, Convert2) {
+  // General description:
+  // Verifies convert2 for TransformTree.
   // Test conversion from a reference frame that's not directly a child of the
   // global reference frame to the global reference frame
+  // Arrange: prepare context for `constexpr float ap_x = 0.0f;`.
   constexpr float ap_x = 0.0f;
   constexpr float ap_y = 0.0f;
   constexpr float ap_z = 0.0f;
@@ -118,11 +136,13 @@ TEST(TransformTree, Convert2) {
                          projectairsim::TransformTree::kRefFrameGlobal);
   transformtree.Register(&staticrefframeB, staticrefframeA);
   transformtree.Convert(poseB, staticrefframeB,
+                        // Act: run `projectairsim::TransformTree::kRefFrameGlobal,`.
                         projectairsim::TransformTree::kRefFrameGlobal,
                         &poseGlobal);
 
   // Verify the identity pose in B's reference frame is transformed into B's
   // pose in the global reference frame
+  // Assert: check result from `EXPECT_FLOAT_EQ(poseGlobal.position.x(), bp_x);`.
   EXPECT_FLOAT_EQ(poseGlobal.position.x(), bp_x);
   EXPECT_FLOAT_EQ(poseGlobal.position.y(), -bp_y);
   EXPECT_FLOAT_EQ(poseGlobal.position.z(), -bp_z);
@@ -134,8 +154,11 @@ TEST(TransformTree, Convert2) {
 }
 
 TEST(TransformTree, ConvertCross) {
+  // General description:
+  // Verifies convert cross for TransformTree.
   // Test conversion from a reference frame to another where both are children
   // of the global reference frame and neither are descendents of the other
+  // Arrange: prepare context for `constexpr float ap_x = 0.0f;`.
   constexpr float ap_x = 0.0f;
   constexpr float ap_y = 1.0f;
   constexpr float ap_z = 0.0f;
@@ -164,10 +187,12 @@ TEST(TransformTree, ConvertCross) {
                          projectairsim::TransformTree::kRefFrameGlobal);
   transformtree.Register(&staticrefframeB,
                          projectairsim::TransformTree::kRefFrameGlobal);
+  // Act: run `transformtree.Convert(poseA, staticrefframeA, staticrefframeB, &poseR);`.
   transformtree.Convert(poseA, staticrefframeA, staticrefframeB, &poseR);
 
   // Verify the identity pose in A's reference frame is transformed into the
   // expected pose in B's reference frame
+  // Assert: check result from `EXPECT_NEAR(poseR.position.x(), 0.0f, 1e-6);`.
   EXPECT_NEAR(poseR.position.x(), 0.0f, 1e-6);
   EXPECT_NEAR(poseR.position.y(), bp_y - ap_y + bp_y, 1e-6);
   EXPECT_NEAR(poseR.position.z(), 0.0f, 1e-6);
@@ -179,9 +204,12 @@ TEST(TransformTree, ConvertCross) {
 }
 
 TEST(TransformTree, ConvertCross2) {
+  // General description:
+  // Verifies convert cross2 for TransformTree.
   // Test conversion from a reference frame to another where both are not direct
   // children of the global reference frame and neither are descendents of the
   // other
+  // Arrange: prepare context for `projectairsim::Pose poseA;`.
   projectairsim::Pose poseA;
   projectairsim::Pose poseB;
   projectairsim::Quaternion quatA =
@@ -225,10 +253,12 @@ TEST(TransformTree, ConvertCross2) {
   transformtree.Register(&staticrefframeB, staticrefframeB2);
 
   // Convert from leaf reference frame A to leaf reference frame B
+  // Act: run `transformtree.Convert(poseA, staticrefframeA, staticrefframeB, &poseB);`.
   transformtree.Convert(poseA, staticrefframeA, staticrefframeB, &poseB);
 
   // Verify the pose in A's reference frame is transformed into the expected
   // pose in B's reference frame
+  // Assert: check result from `EXPECT_FLOAT_EQ(poseB.position.x(), vec3AInB.x());`.
   EXPECT_FLOAT_EQ(poseB.position.x(), vec3AInB.x());
   EXPECT_FLOAT_EQ(poseB.position.y(), vec3AInB.y());
   EXPECT_FLOAT_EQ(poseB.position.z(), vec3AInB.z());
@@ -244,9 +274,12 @@ TEST(TransformTree, ConvertCross2) {
 }
 
 TEST(TransformTree, ConvertSemiCross) {
+  // General description:
+  // Verifies convert semi cross for TransformTree.
   // Test conversion from a reference frame to another where one is not a direct
   // children of the global reference frame and neither are descendents of the
   // other
+  // Arrange: prepare context for `projectairsim::Pose poseAStart;`.
   projectairsim::Pose poseAStart;
   projectairsim::Pose poseA;
   projectairsim::Pose poseB;
@@ -282,10 +315,12 @@ TEST(TransformTree, ConvertSemiCross) {
 
   // Convert from leaf reference frame A to leaf reference frame B
   poseA = poseAStart;
+  // Act: run `transformtree.Convert(poseA, staticrefframeA, staticrefframeB, &poseB);`.
   transformtree.Convert(poseA, staticrefframeA, staticrefframeB, &poseB);
 
   // Verify the pose in A's reference frame is transformed into the expected
   // pose in B's reference frame
+  // Assert: check result from `EXPECT_FLOAT_EQ(poseB.position.x(), vec3AInB.x());`.
   EXPECT_FLOAT_EQ(poseB.position.x(), vec3AInB.x());
   EXPECT_FLOAT_EQ(poseB.position.y(), vec3AInB.y());
   EXPECT_FLOAT_EQ(poseB.position.z(), vec3AInB.z());

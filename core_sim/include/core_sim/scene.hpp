@@ -1,4 +1,4 @@
-// Copyright (C) Microsoft Corporation. 
+// Copyright (C) Microsoft Corporation.
 // Copyright (C) 2025 IAMAI CONSULTING CORP
 
 // MIT License. All rights reserved.
@@ -34,14 +34,17 @@ struct SegmentationSettings {
   bool use_owner_name = true;
 };
 
-enum SceneType { kUnrealNative = 0, kCustomGIS = 1, kCesiumGIS = 2, kBlackShark = 3};
+enum SceneType {
+  kUnrealNative = 0,
+  kCustomGIS = 1,
+  kCesiumGIS = 2,
+  kBlackShark = 3
+};
 
-NLOHMANN_JSON_SERIALIZE_ENUM(SceneType, {
-                                            {kUnrealNative, "UnrealNative"},
-                                            {kCustomGIS, "CustomGIS"},
-                                            {kCesiumGIS, "CesiumGIS"},
-                                            {kBlackShark, "BlackShark"}
-                                        })
+NLOHMANN_JSON_SERIALIZE_ENUM(SceneType, {{kUnrealNative, "UnrealNative"},
+                                         {kCustomGIS, "CustomGIS"},
+                                         {kCesiumGIS, "CesiumGIS"},
+                                         {kBlackShark, "BlackShark"}})
 
 class Scene {
  public:
@@ -75,6 +78,13 @@ class Scene {
                                const std::string&)>& callback);
 
   const ClockSettings& GetClockSettings() const;
+
+  // Run a single simulation tick from an external loop (for engine-driven
+  // clock mode where scene ticks are not run on ScheduledExecutor thread).
+  bool ExternalTick();
+
+  // Run one host-driven simulation tick with the exact elapsed duration.
+  bool ExternalTick(TimeNano step_nanos);
 
   const SegmentationSettings& GetSegmentationSettings() const;
 
@@ -134,7 +144,8 @@ class Scene {
   Scene(const Logger& logger, const TopicManager& topic_manager,
         const std::string& parent_topic_path,
         const ServiceManager& service_manager,
-        const StateManager& state_manager);
+        const StateManager& state_manager,
+        const std::string& working_simulation_path_);
 
   void LoadWithJSON(ConfigJson config_json);
 

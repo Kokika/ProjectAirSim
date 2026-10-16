@@ -63,11 +63,16 @@ using json = nlohmann::json;
 // Test suit name should follow proper naming convention (no '_' strictly)
 
 TEST(Lidar, SetslidarID) {
+  // General description:
+  // Verifies setslidar id for Lidar.
+  // Arrange: prepare context for `auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();`.
   auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();
   auto id = lidar_json["id"];
   const auto& is_enabled = lidar_json["enabled"];
   const auto& parent_link = lidar_json["parent-link"];
+  // Act: run `auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);`.
   auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(lidar.GetId(), std::string("ID123"));`.
   EXPECT_EQ(lidar.GetId(), std::string("ID123"));
   id = "lidar123";
   lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
@@ -75,20 +80,30 @@ TEST(Lidar, SetslidarID) {
 }
 
 TEST(Lidar, SetsSensorType) {
+  // General description:
+  // Verifies sets sensor type for Lidar.
+  // Arrange: prepare context for `auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();`.
   auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();
   auto id = lidar_json["id"];
   const auto& is_enabled = lidar_json["enabled"];
   const auto& parent_link = lidar_json["parent-link"];
+  // Act: run `auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);`.
   auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(lidar.GetType(), projectairsim::SensorType::kLidar);`.
   EXPECT_EQ(lidar.GetType(), projectairsim::SensorType::kLidar);
 }
 
 TEST(Lidar, SetsIsEnabled) {
+  // General description:
+  // Verifies sets is enabled for Lidar.
+  // Arrange: prepare context for `auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();`.
   auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();
   auto id = lidar_json["id"];
   auto is_enabled = false;
   const auto& parent_link = lidar_json["parent-link"];
+  // Act: run `auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);`.
   auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(lidar.IsEnabled(), false);`.
   EXPECT_EQ(lidar.IsEnabled(), false);
   is_enabled = true;
   lidar = projectairsim::Robot::MakeLidar("TestLidar", is_enabled, parent_link);
@@ -96,11 +111,16 @@ TEST(Lidar, SetsIsEnabled) {
 }
 
 TEST(Lidar, SetsParentLink) {
+  // General description:
+  // Verifies sets parent link for Lidar.
+  // Arrange: prepare context for `auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();`.
   auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();
   auto id = lidar_json["id"];
   const auto& is_enabled = false;
   auto parent_link = lidar_json["parent-link"];
+  // Act: run `auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);`.
   auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(lidar.GetParentLink(), "ParentLink");`.
   EXPECT_EQ(lidar.GetParentLink(), "ParentLink");
   parent_link = "ParentLink123";
   lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
@@ -108,27 +128,40 @@ TEST(Lidar, SetsParentLink) {
 }
 
 TEST(Lidar, LoadsLidar) {
+  // General description:
+  // Verifies loads lidar for Lidar.
+  // Arrange: prepare context for `auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();`.
   auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();
   auto id = lidar_json["id"];
   const auto& is_enabled = lidar_json["enabled"];
   const auto& parent_link = lidar_json["parent-link"];
   auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
+  // Act: run `projectairsim::Robot::LoadLidar(lidar, lidar_json);`.
   projectairsim::Robot::LoadLidar(lidar, lidar_json);
+  // Assert: check result from `EXPECT_EQ(lidar.IsLoaded(), true);`.
   EXPECT_EQ(lidar.IsLoaded(), true);
 }
 
 TEST(Lidar, SetsIsLoaded) {
+  // General description:
+  // Verifies sets is loaded for Lidar.
+  // Arrange: prepare context for `auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();`.
   auto lidar_json = projectairsim::Robot::GetBasiclidarConfig();
   auto id = lidar_json["id"];
   const auto& is_enabled = lidar_json["enabled"];
   const auto& parent_link = lidar_json["parent-link"];
+  // Act: run `auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);`.
   auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(lidar.IsLoaded(), false);`.
   EXPECT_EQ(lidar.IsLoaded(), false);
   projectairsim::Robot::LoadLidar(lidar, lidar_json);
   EXPECT_EQ(lidar.IsLoaded(), true);
 }
 
 TEST(Lidar, LidarSetting) {
+  // General description:
+  // Verifies lidar setting for Lidar.
+  // Arrange: prepare context for `json lidar_json = R"({`.
   json lidar_json = R"({
       "id": "ID123",
       "type": "lidar",
@@ -148,7 +181,9 @@ TEST(Lidar, LidarSetting) {
   auto id = lidar_json["id"];
   const auto& is_enabled = lidar_json["enabled"];
   const auto& parent_link = lidar_json["parent-link"];
+  // Act: run `auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);`.
   auto lidar = projectairsim::Robot::MakeLidar(id, is_enabled, parent_link);
+  // Assert: check result from `EXPECT_EQ(lidar.IsLoaded(), false);`.
   EXPECT_EQ(lidar.IsLoaded(), false);
   projectairsim::Robot::LoadLidar(lidar, lidar_json);
   const auto& lidar_settings = lidar.GetLidarSettings();
