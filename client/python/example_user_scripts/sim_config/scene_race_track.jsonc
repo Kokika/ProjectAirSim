@@ -1,0 +1,40 @@
+{
+    // Cartoon oval race track (Unreal level /Game/RaceTrack/RaceTrackMap).
+    // Open that level in the editor (or package it as the default map) before
+    // loading this scene: "UnrealNative" uses whatever level is running.
+    //
+    // Track centerline (NED meters, z ignored): a stadium with straights at
+    // y = -27.9 (main, pit side) and y = -293.4 (back) for x in [-150, 150],
+    // joined by banked semicircles of radius 132.75 centered on (+-150, -160.65).
+    // Road width ~15 m, lap ~1434 m, racing direction +x on the main straight.
+    "id": "SceneRaceTrack",
+    "actors": [
+      {
+        "type": "robot",
+        "name": "RaceCar",
+        "origin": {
+          "xyz": "-50.0 -27.9 -1.5",
+          "rpy-deg": "0 0 0"
+        },
+        "robot-config": "robot_unreal_vehicle_simpledrive.jsonc"
+      }
+    ],
+    "clock": {
+      "type": "engine-driven",
+      "step-ns": 3000000,
+      "real-time-update-rate": 3000000,
+      "engine-substepping": true,
+      "pause-on-start": false
+    },
+    "home-geo-point": {
+      "latitude": 47.641468,
+      "longitude": -122.140165,
+      "altitude": 122.0
+    },
+    "segmentation": {
+      "initialize-ids": true,
+      "ignore-existing": false,
+      "use-owner-name": true
+    },
+    "scene-type": "UnrealNative"
+  }
