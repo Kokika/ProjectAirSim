@@ -113,6 +113,12 @@ class Robot : public Actor {
 
   void SetCallbackKinematicsUpdated(const KinematicsCallback& callback);
 
+  // Called only when an API request (SetPose, SetGroundTruthKinematics) asks
+  // to move the robot, not on the per-tick kinematics updates. Engine-driven
+  // vehicles use it to teleport their own physics body, which would otherwise
+  // overwrite the requested state on the next tick.
+  void SetCallbackKinematicsSetRequested(const KinematicsCallback& callback);
+
   void SetCallbackActuatorOutputUpdated(
       const ActuatedTransformsCallback& callback);
 

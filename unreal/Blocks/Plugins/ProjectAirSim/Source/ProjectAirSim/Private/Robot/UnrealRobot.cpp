@@ -1198,6 +1198,67 @@ bool AUnrealRobot::PeekProjectAirSimVehicleSubstepDelta(
   return ProjectAirSimVehicleSubstepSampler->PeekNextDelta(OutDeltaNanos);
 }
 
+void AUnrealRobot::ApplyPendingProjectAirSimVehicleKinematics() {
+  projectairsim::Kinematics Kin;
+  {
+    FScopeLock ScopeLock(&UpdateMutex);
+    if (!bHasPendingVehicleKinematics) return;
+    Kin = PendingVehicleKinematics;
+    bHasPendingVehicleKinematics = false;
+  }
+  if (ProjectAirSimVehicleActor == nullptr) return;
+
+  // NED_m -> NEU_cm, same conversion as the spawn transform
+  const FVector TgtLoc =
+      UnrealHelpers::ToFVector(projectairsim::TransformUtils::NedToNeuLinear(
+          projectairsim::TransformUtils::ToCentimeters(Kin.pose.position)));
+  const FRotator TgtRot = UnrealHelpers::ToFRotator(Kin.pose.orientation);
+  const FVector TgtVelLin =
+      UnrealHelpers::ToFVector(projectairsim::TransformUtils::NedToNeuLinear(
+          projectairsim::TransformUtils::ToCentimeters(Kin.twist.linear)));
+  const FVector TgtVelAng = UnrealHelpers::ToFVector(
+      projectairsim::TransformUtils::NedToNeuAngular(Kin.twist.angular));
+
+  ProjectAirSimVehicleActor->SetActorLocationAndRotation(
+      TgtLoc, TgtRot, false, nullptr, ETeleportType::TeleportPhysics);
+
+  UPrimitiveComponent* PhysicsComponent = ProjectAirSimVehicleComponent;
+  if (PhysicsComponent != nullptr) {
+    PhysicsComponent->SetWorldLocationAndRotation(
+        TgtLoc, TgtRot, false, nullptr, ETeleportType::TeleportPhysics);
+
+    if (PhysicsComponent->IsSimulatingPhysics()) {
+      PhysicsComponent->SetAllPhysicsPosition(TgtLoc);
+      PhysicsComponent->SetAllPhysicsRotation(TgtRot.Quaternion());
+      PhysicsComponent->SetPhysicsLinearVelocity(TgtVelLin);
+      PhysicsComponent->SetPhysicsAngularVelocityInRadians(TgtVelAng);
+    }
+  }
+
+  // Do not call UChaosVehicleMovementComponent::ResetVehicle() here: after it
+  // the substep sampler stopped receiving physics states, core_sim stopped
+  // ticking and the published kinematics froze. Restart the sampler instead
+  // so states captured before the teleport are dropped; it is started again
+  // by EnsureProjectAirSimVehicleSubstepSampler() later in this tick.
+  if (ProjectAirSimVehicleSubstepSampler != nullptr) {
+    ProjectAirSimVehicleSubstepSampler->Stop();
+  }
+
+  // Restart finite-difference velocity estimation from the new pose
+  PrevExtPosition = TgtLoc;
+  PrevExtQuat = TgtRot.Quaternion();
+  bHasPrevExtState = false;
+
+  this->SetActorLocationAndRotation(TgtLoc, TgtRot, false, nullptr,
+                                    ETeleportType::TeleportPhysics);
+
+  UnrealLogger::Log(projectairsim::LogLevel::kVerbose,
+                    TEXT("[%hs] Vehicle set to pose (%.1f, %.1f, %.1f) cm, "
+                         "yaw %.1f, velocity (%.1f, %.1f, %.1f) cm/s"),
+                    SimRobot.GetID().c_str(), TgtLoc.X, TgtLoc.Y, TgtLoc.Z,
+                    TgtRot.Yaw, TgtVelLin.X, TgtVelLin.Y, TgtVelLin.Z);
+}
+
 void AUnrealRobot::TickProjectAirSimVehicle(float DeltaTime) {
   if (ProjectAirSimVehicleActor == nullptr) return;
 
@@ -1270,6 +1331,8 @@ void AUnrealRobot::TickProjectAirSimVehicle(float DeltaTime) {
       }
     }
   }
+
+  ApplyPendingProjectAirSimVehicleKinematics();
 
   EnsureProjectAirSimVehicleSubstepSampler();
   DrainProjectAirSimVehicleSubstepSamples();
@@ -1805,6 +1868,15 @@ void AUnrealRobot::BeginPlay() {
   SimRobot.SetCallbackKinematicsUpdated(
       [this](const projectairsim::Kinematics& Kin, TimeNano Timestamp) {
         this->SetRobotKinematics(Kin, Timestamp);
+      });
+
+  // ProjectAirSim vehicles read their pose back from Chaos every tick, so an
+  // API pose/velocity request must be applied to the vehicle body itself.
+  SimRobot.SetCallbackKinematicsSetRequested(
+      [this](const projectairsim::Kinematics& Kin, TimeNano Timestamp) {
+        FScopeLock ScopeLock(&UpdateMutex);
+        PendingVehicleKinematics = Kin;
+        bHasPendingVehicleKinematics = true;
       });
 
   // Register callback for sim robot to set actuated rotations on UnrealRobot

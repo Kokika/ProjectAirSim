@@ -119,6 +119,10 @@ class Robot::Impl : public ActorImpl {
 
   void SetCallbackKinematicsUpdated(const KinematicsCallback& callback);
 
+  void SetCallbackKinematicsSetRequested(const KinematicsCallback& callback);
+
+  void NotifyKinematicsSetRequested(const Kinematics& kinematics);
+
   void SetCallbackActuatorOutputUpdated(
       const ActuatedTransformsCallback& callback);
 
@@ -260,6 +264,7 @@ class Robot::Impl : public ActorImpl {
   std::mutex step_event_mutex_;
 
   KinematicsCallback callback_kinematics_updated_;
+  KinematicsCallback callback_kinematics_set_requested_;
 
   ActuatedTransformsCallback callback_actuated_transforms_updated_;
 
@@ -404,6 +409,12 @@ void Robot::PublishRobotPose(const PoseStampedMessage& pose) {
 void Robot::SetCallbackKinematicsUpdated(const KinematicsCallback& callback) {
   static_cast<Robot::Impl*>(pimpl_.get())
       ->SetCallbackKinematicsUpdated(callback);
+}
+
+void Robot::SetCallbackKinematicsSetRequested(
+    const KinematicsCallback& callback) {
+  static_cast<Robot::Impl*>(pimpl_.get())
+      ->SetCallbackKinematicsSetRequested(callback);
 }
 
 void Robot::SetCallbackActuatorOutputUpdated(
@@ -605,6 +616,7 @@ Robot::Impl::Impl(const std::string& id, const Transform& origin,
                 state_manager),
       loader_(*this),
       callback_kinematics_updated_(nullptr),
+      callback_kinematics_set_requested_(nullptr),
       callback_actuated_transforms_updated_(nullptr),
       indirectrefframe_(std::string("R ") + id, &kinematics_.pose),
       staticrefframe_home_(std::string("R ") + id + "_home", kinematics_.pose),
@@ -927,8 +939,20 @@ bool Robot::Impl::SetGroundTruthKinematics(
   Kinematics new_kin = kinematics.GetKinematics();
   SetHasCollided(false);
   UpdateKinematics(new_kin);
+  NotifyKinematicsSetRequested(new_kin);
 
   return true;
+}
+
+void Robot::Impl::NotifyKinematicsSetRequested(const Kinematics& kinematics) {
+  KinematicsCallback func;
+  {
+    std::lock_guard<std::mutex> lock(update_lock_);
+    func = callback_kinematics_set_requested_;
+  }
+  if (func != nullptr) {
+    func(kinematics, SimClock::Get()->NowSimNanos());
+  }
 }
 
 void Robot::Impl::SetController(std::unique_ptr<IController> controller) {
@@ -1043,6 +1067,12 @@ void Robot::Impl::SetCallbackKinematicsUpdated(
   callback_kinematics_updated_ = callback;
 }
 
+void Robot::Impl::SetCallbackKinematicsSetRequested(
+    const KinematicsCallback& callback) {
+  std::lock_guard<std::mutex> lock(update_lock_);
+  callback_kinematics_set_requested_ = callback;
+}
+
 void Robot::Impl::SetCallbackActuatorOutputUpdated(
     const ActuatedTransformsCallback& callback) {
   std::lock_guard<std::mutex> lock(update_lock_);
@@ -1074,6 +1104,7 @@ double Robot::Impl::GetCachedTerrainElevationASL() const {
 void Robot::Impl::OnEndUpdate() {
   // Clear all topic callbacks to nullptr
   callback_kinematics_updated_ = nullptr;
+  callback_kinematics_set_requested_ = nullptr;
   callback_actuated_transforms_updated_ = nullptr;
 
   // Unregister all topics
@@ -1118,6 +1149,7 @@ bool Robot::Impl::SetPose(const Transform& new_pose, bool reset_kinematics) {
   // Call UpdateKinematics to set the new pose on the robot, which will also
   // update the UnrealRobot's pose to match
   UpdateKinematics(new_kin);
+  NotifyKinematicsSetRequested(new_kin);
 
   return true;
 }

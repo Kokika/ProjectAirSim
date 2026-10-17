@@ -157,6 +157,10 @@ class AUnrealRobot : public AActor {
 
   void TickProjectAirSimVehicle(float DeltaTime);
 
+  // Teleport the ProjectAirSim vehicle to a pose/velocity requested through
+  // the API (SetPose, SetGroundTruthKinematics). Runs on the game thread.
+  void ApplyPendingProjectAirSimVehicleKinematics();
+
   void EnsureProjectAirSimVehicleSubstepSampler();
 
   void DrainProjectAirSimVehicleSubstepSamples();
@@ -228,4 +232,9 @@ class AUnrealRobot : public AActor {
   FVector PrevExtPosition = FVector::ZeroVector;
   FQuat PrevExtQuat = FQuat::Identity;
   bool bHasPrevExtState = false;
+
+  // API request to move the ProjectAirSim vehicle, written from the service
+  // thread under UpdateMutex and consumed in TickProjectAirSimVehicle().
+  bool bHasPendingVehicleKinematics = false;
+  microsoft::projectairsim::Kinematics PendingVehicleKinematics;
 };
