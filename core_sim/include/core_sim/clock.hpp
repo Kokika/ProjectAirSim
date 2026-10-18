@@ -205,6 +205,9 @@ struct ClockSettings {
   bool engine_substepping = false;
   bool engine_fixed_fps_enabled = false;
   float engine_fixed_fps = 30.0f;
+  // Steppable clock with Unreal physics: every Unreal frame advances exactly
+  // one `step` (FApp fixed time step), independent of the real frame time.
+  bool engine_fixed_timestep = false;
 };
 
 // -----------------------------------------------------------------------------

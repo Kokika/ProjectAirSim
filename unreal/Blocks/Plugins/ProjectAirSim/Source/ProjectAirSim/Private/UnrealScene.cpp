@@ -21,7 +21,9 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerInput.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/CoreDelegates.h"
 #include "Misc/EngineVersionComparison.h"
+#include <atomic>
 #include "PBDRigidsSolver.h"
 #include "Physics/Experimental/PhysScene_Chaos.h"
 #include "PhysicsEngine/PhysicsSettings.h"
@@ -38,6 +40,32 @@
 #include "core_sim/clock.hpp"
 
 namespace projectairsim = microsoft::projectairsim;
+
+namespace {
+// UE 5.8 pipelines FAppTime through the TaskGraph: a scene is loaded inside a
+// game-thread task, and FApp::SetUseFixedTimeStep() there only changes that
+// task's copy, which is dropped when the task ends. So the fixed time step is
+// requested here and applied at the start of every frame (root context).
+std::atomic<bool> GWantFixedTimeStep{false};
+std::atomic<double> GFixedTimeStepSec{0.01};
+const void* GFixedTimeStepOwner = nullptr;  // the scene actor that enabled it
+
+void RequestFixedTimeStep(bool bEnable, double StepSec) {
+  static bool bDelegateAdded = false;
+  GFixedTimeStepSec = StepSec;
+  GWantFixedTimeStep = bEnable;
+  if (!bDelegateAdded) {
+    bDelegateAdded = true;
+    FCoreDelegates::OnBeginFrame.AddLambda([]() {
+      const bool bWant = GWantFixedTimeStep;
+      if (FApp::UseFixedTimeStep() != bWant) FApp::SetUseFixedTimeStep(bWant);
+      if (bWant && FApp::GetFixedDeltaTime() != GFixedTimeStepSec) {
+        FApp::SetFixedDeltaTime(GFixedTimeStepSec);
+      }
+    });
+  }
+}
+}  // namespace
 
 #if UE_VERSION_OLDER_THAN(5, 7, 0)
 constexpr Chaos::ESimCallbackOptions kProjectAirSimSceneCallbackOptions =
@@ -315,6 +343,11 @@ void AUnrealScene::UnloadUnrealScene() {
   tracing_enabled = false;
 
   // Reset persistent engine settings back to defaults
+  if (using_fixed_timestep && GFixedTimeStepOwner == this) {
+    RequestFixedTimeStep(false, 0.01);
+    GFixedTimeStepOwner = nullptr;
+  }
+  using_fixed_timestep = false;
   GEngine->bUseFixedFrameRate = false;  // set to default from GameEngine.cpp
   GEngine->FixedFrameRate = 30.0f;      // set to default from GameEngine.cpp
   FApp::SetFixedDeltaTime(1 / 30.0);    // set to default from App.cpp
@@ -476,6 +509,8 @@ void AUnrealScene::BeginPlay() {
       using_unreal_physics_substep_clock ? TEXT("true") : TEXT("false"));
 
   // Set up Unreal loop timing
+  using_fixed_timestep = false;
+  RequestFixedTimeStep(false, 0.01);
   if (sim_scene && (sim_scene->GetClockSettings().type ==
                         projectairsim::ClockType::kSteppable ||
                     sim_scene->GetClockSettings().type ==
@@ -507,6 +542,16 @@ void AUnrealScene::BeginPlay() {
         // Chaos divides each variable render frame into configured physics
         // substeps, so do not force the render loop to the core_sim step.
         GEngine->bUseFixedFrameRate = false;
+      } else if (sim_scene->GetClockSettings().type ==
+                     projectairsim::ClockType::kSteppable &&
+                 sim_scene->GetClockSettings().engine_fixed_timestep) {
+        // Every frame is exactly one sim step, however long it takes to
+        // render: the sim waits for slow clients and runs faster than real
+        // time when it can. Tick() sleeps while the clock is paused.
+        using_fixed_timestep = true;
+        GFixedTimeStepOwner = this;
+        RequestFixedTimeStep(true, sim_step_sec);
+        GEngine->bUseFixedFrameRate = false;
       } else {
         // Since using UnrealPhysics means the physics step is linked to the
         // engine step, cap max FPS to the configured simulation period.
@@ -521,6 +566,12 @@ void AUnrealScene::BeginPlay() {
     GEngine->FixedFrameRate = 30.0f;      // set to default from GameEngine.cpp
     GEngine->bUseFixedFrameRate = false;  // set to default from GameEngine.cpp
   }
+
+  UnrealLogger::Log(
+      projectairsim::LogLevel::kTrace,
+      TEXT("[UnrealScene] fixed-timestep=%s fixed-frame-rate=%d"),
+      using_fixed_timestep ? TEXT("true") : TEXT("false"),
+      GEngine->bUseFixedFrameRate ? 1 : 0);
 
   if (using_unreal_physics_substep_clock) {
     // This setting persists across scene loads. A substep-driven scene must
@@ -764,8 +815,11 @@ void AUnrealScene::Tick(float DeltaTime) {
       UGameplayStatics::SetGamePaused(unreal_world, false);
     } else if (!is_unreal_paused && !is_simclock_paused) {
       // Condition #2:
-      // Neither is paused, so advance sim time for this tick
-      cur_sim_time += UnrealHelpers::DeltaTimeToNanos(DeltaTime);
+      // Neither is paused, so advance sim time for this tick (exactly one
+      // step with a fixed time step: DeltaTime is that step as a float)
+      cur_sim_time += using_fixed_timestep
+                          ? sim_scene->GetClockSettings().step
+                          : UnrealHelpers::DeltaTimeToNanos(DeltaTime);
       projectairsim::SimClock::Get()->SetNextSimTime(cur_sim_time);
 
       // Wait for sim to catch up processing new sim time
@@ -781,7 +835,16 @@ void AUnrealScene::Tick(float DeltaTime) {
       }
     } else if (is_unreal_paused && is_simclock_paused) {
       // Condition #3:
-      // Everything is paused, so just stay that way (no-op)
+      // Everything is paused, so just stay that way. With a fixed time step
+      // the engine does not limit the frame rate, so wait here (up to 50 ms)
+      // for the next continue request instead of rendering idle frames.
+      if (using_fixed_timestep) {
+        const double WaitUntil = FPlatformTime::Seconds() + 0.05;
+        while (projectairsim::SimClock::Get()->IsPaused() &&
+               FPlatformTime::Seconds() < WaitUntil) {
+          std::this_thread::sleep_for(std::chrono::microseconds(200));
+        }
+      }
     } else {  // (!is_unreal_paused && is_simclock_paused)
       // Condition #4:
       // Unreal advanced physics while simclock was paused, this should not
@@ -986,6 +1049,12 @@ nlohmann::json AUnrealScene::Get3DBoundingBoxServiceMethod(
 }
 
 void AUnrealScene::EndPlay(const EEndPlayReason::Type EndPlayReason) {
+  // A fixed time step would keep the editor spinning after PIE ends
+  if (using_fixed_timestep && GFixedTimeStepOwner == this) {
+    RequestFixedTimeStep(false, 0.01);
+    GFixedTimeStepOwner = nullptr;
+  }
+  using_fixed_timestep = false;
   delete scene_substep_sampler_;
   scene_substep_sampler_ = nullptr;
   Super::EndPlay(EndPlayReason);

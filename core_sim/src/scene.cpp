@@ -1409,6 +1409,14 @@ void Scene::Loader::LoadClockSettings(const json& json) {
       }
       impl_.clock_settings_.engine_fixed_fps_enabled = true;
     }
+
+    impl_.clock_settings_.engine_fixed_timestep = JsonUtils::GetBoolean(
+        clock_json, Constant::Config::engine_fixed_timestep, false);
+    if (impl_.clock_settings_.engine_fixed_timestep &&
+        impl_.clock_settings_.type != ClockType::kSteppable) {
+      throw Error(
+          "'clock.engine-fixed-timestep' needs the 'steppable' clock type.");
+    }
   } catch (...) {
     throw;
   }

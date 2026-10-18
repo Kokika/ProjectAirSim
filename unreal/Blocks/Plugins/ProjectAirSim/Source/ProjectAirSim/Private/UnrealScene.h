@@ -127,6 +127,9 @@ class AUnrealScene : public AActor {
   bool using_unreal_vehicle_physics = false;
   bool using_unreal_driven_clock = false;
   bool using_unreal_physics_substep_clock = false;
+  // Steppable clock + Unreal physics + 'engine-fixed-timestep': every frame
+  // advances exactly one clock step and the paused frames sleep.
+  bool using_fixed_timestep = false;
   FProjectAirSimSceneSubstepSampler* scene_substep_sampler_ = nullptr;
   microsoft::projectairsim::EngineDrivenClock* unreal_driven_clock_ =
     nullptr;

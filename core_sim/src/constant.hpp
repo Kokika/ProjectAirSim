@@ -85,6 +85,8 @@ class Constant {
     static constexpr const char* env_actors = "environment-actors";
     static constexpr const char* clock = "clock";
     static constexpr const char* engine_fixed_fps = "engine-fixed-fps";
+    static constexpr const char* engine_fixed_timestep =
+        "engine-fixed-timestep";
     static constexpr const char* engine_substepping = "engine-substepping";
     static constexpr const char* steppable = "steppable";
     static constexpr const char* real_time = "real-time";
