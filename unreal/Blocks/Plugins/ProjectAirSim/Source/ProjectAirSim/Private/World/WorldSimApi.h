@@ -283,6 +283,11 @@ class WorldSimApi {
 
   std::string getAnimSequence(const std::string& object_name);
 
+  // Give a skeletal actor (e.g. one made by spawnObject) an animation blueprint,
+  // so that setSlotAnimSequence can layer poses on its slots.
+  bool setAnimClass(const std::string& object_name,
+                    const std::string& anim_class_path);
+
   std::string getObjectLabel(const std::string& object_name);
 
   bool changeActorMaterialSkeleton(const std::string& object_name,

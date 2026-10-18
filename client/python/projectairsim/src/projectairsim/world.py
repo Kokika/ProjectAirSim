@@ -483,6 +483,24 @@ class World(object):
         }
         return self.client.request(set_req)
 
+    def set_anim_class(self, object_name: str, anim_class_path: str) -> bool:
+        """Give a skeletal mesh object an animation blueprint (e.g. a spawned character)
+
+        Args:
+            object_name (str): name of the object
+            anim_class_path (str): animation blueprint path, e.g.
+                "/Game/Characters/casual_f_01/Animation/casual_f_01_AB_gesture"
+
+        Returns:
+            bool: whether the object now runs that animation blueprint
+        """
+        req: Dict = {
+            "method": f"{self.parent_topic}/SetAnimClass",
+            "params": {"object_name": object_name, "anim_class_path": anim_class_path},
+            "version": 1.0,
+        }
+        return self.client.request(req)
+
     def set_slot_anim_sequence(
         self,
         object_name: str,

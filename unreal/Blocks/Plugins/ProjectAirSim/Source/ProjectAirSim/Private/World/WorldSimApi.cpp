@@ -7,6 +7,7 @@
 
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "Misc/OutputDeviceNull.h"
 #include "Renderers/AssimpToProcMesh.h"
 #include "Renderers/ProcMeshActor.h"
@@ -79,6 +80,12 @@ void WorldSimApi::RegisterServiceMethods() {
           &WorldSimApi::setSlotAnimSequence, *this);
   sim_scene_->RegisterServiceMethod(set_slot_anim_sequence,
                                     set_slot_anim_sequence_handler);
+  auto set_anim_class = projectairsim::ServiceMethod(
+      "SetAnimClass", {"object_name", "anim_class_path"});
+  auto set_anim_class_handler =
+      set_anim_class.CreateMethodHandler(&WorldSimApi::setAnimClass, *this);
+  sim_scene_->RegisterServiceMethod(set_anim_class, set_anim_class_handler);
+
   auto get_object_label =
       projectairsim::ServiceMethod("GetObjectLabel", {"object_name"});
   auto get_object_label_handler = get_object_label.CreateMethodHandler(
@@ -2190,6 +2197,40 @@ bool WorldSimApi::setSlotAnimSequence(
               }
             }
           }
+        }
+      },
+      true);
+  return result;
+}
+
+bool WorldSimApi::setAnimClass(const std::string& object_name,
+                               const std::string& anim_class_path) {
+  bool result = false;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &object_name, &anim_class_path, &result]() {
+        AActor* actor = UnrealHelpers::FindActor<AActor>(
+            unreal_world_, FString(object_name.c_str()), &scene_object_map_);
+        if (!actor) return;
+        USkeletalMeshComponent* skeletal_component =
+            Cast<USkeletalMeshComponent>(actor->GetComponentByClass(
+                USkeletalMeshComponent::StaticClass()));
+        if (!skeletal_component) return;
+        // "/Game/.../AB_gesture" or ".../AB_gesture.AB_gesture_C": load the generated class
+        FString path(anim_class_path.c_str());
+        if (!path.EndsWith(TEXT("_C"))) {
+          FString name = FPaths::GetBaseFilename(path);
+          if (!path.Contains(TEXT("."))) path += TEXT(".") + name;
+          path += TEXT("_C");
+        }
+        UClass* anim_class = LoadObject<UClass>(nullptr, *path);
+        if (anim_class && anim_class->IsChildOf(UAnimInstance::StaticClass())) {
+          // Sensor cameras do not count as "rendered": without this a spawned
+          // character's slot montages never refresh its bones.
+          skeletal_component->VisibilityBasedAnimTickOption =
+              EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+          skeletal_component->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+          skeletal_component->SetAnimInstanceClass(anim_class);
+          result = skeletal_component->GetAnimInstance() != nullptr;
         }
       },
       true);
