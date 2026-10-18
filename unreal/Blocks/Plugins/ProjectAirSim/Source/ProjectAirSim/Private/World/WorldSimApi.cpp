@@ -982,8 +982,16 @@ std::vector<std::string> WorldSimApi::getActorComponents(
   return result;
 }
 
+// The weather functions load the material parameter collection
+// (StaticLoadObject), which must not run on the API thread: a load during the
+// game thread's garbage collection aborts the editor. Run them on the game thread.
 bool WorldSimApi::enableWeather(bool enable) {
-  bool status = UWeatherLib::setWeatherEnabled(unreal_world_, enable);
+  bool status = false;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, enable, &status]() {
+        status = UWeatherLib::setWeatherEnabled(unreal_world_, enable);
+      },
+      true);
   return status;
 }
 
@@ -1000,19 +1008,28 @@ bool WorldSimApi::setWeatherParameter(WeatherParameter param, float val) {
   EWeatherParamScalar param_e =
       UnrealHelpers::toEnum<EWeatherParamScalar>(param_n);
 
-  bool status = UWeatherLib::setWeatherParamScalar(unreal_world_, param_e, val);
+  bool status = false;
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, param_e, val, &status]() {
+        status = UWeatherLib::setWeatherParamScalar(unreal_world_, param_e, val);
+      },
+      true);
   return status;
 }
 
 std::unordered_map<std::string, float> WorldSimApi::getWeatherParameters() {
   std::unordered_map<std::string, float> result;
 
-  for (int i = 1; i <= static_cast<int>(WeatherParameter::Fog); i++) {
-    EWeatherParamScalar param_e = UnrealHelpers::toEnum<EWeatherParamScalar>(i);
-    std::string strNumber = std::to_string(i);
-    result[strNumber] =
-        UWeatherLib::getWeatherParamScalar(unreal_world_, param_e);
-  }
+  UnrealHelpers::RunCommandOnGameThread(
+      [this, &result]() {
+        for (int i = 1; i <= static_cast<int>(WeatherParameter::Fog); i++) {
+          EWeatherParamScalar param_e =
+              UnrealHelpers::toEnum<EWeatherParamScalar>(i);
+          result[std::to_string(i)] =
+              UWeatherLib::getWeatherParamScalar(unreal_world_, param_e);
+        }
+      },
+      true);
   return result;
 }
 
