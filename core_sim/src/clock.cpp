@@ -151,12 +151,14 @@ void SteppableClock::ContinueForNBaseSteps(int n_base_steps) {
 void SteppableClock::Step() {
   // Advance only while the clock is not paused by sim_time_to_pause_.
   if (current_sim_time_ < sim_time_to_pause_) {
-    // Add step (either base or pending step), then reset step amount to base
-    current_sim_time_ += next_step_nanos_;
-    // If being externally stepped, reset next_step = 0 until the next external
-    // API call to set it. Otherwise, reset next_step to internal base_step
-    next_step_nanos_ =
-        is_externally_stepped_only_ ? 0 : base_step_nanos_.load();
+    // Take the step (either base or pending step) and reset the step amount
+    // in one atomic exchange: if being externally stepped, reset next_step = 0
+    // until the next external API call to set it, otherwise to the internal
+    // base_step. A separate load and store lost a SetNextSimTime() that came
+    // in between, and the Unreal game thread then waited forever for the step.
+    const TimeNano step = next_step_nanos_.exchange(
+        is_externally_stepped_only_ ? 0 : base_step_nanos_.load());
+    current_sim_time_ += step;
   }
 }
 

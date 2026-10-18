@@ -822,9 +822,17 @@ void AUnrealScene::Tick(float DeltaTime) {
                           : UnrealHelpers::DeltaTimeToNanos(DeltaTime);
       projectairsim::SimClock::Get()->SetNextSimTime(cur_sim_time);
 
-      // Wait for sim to catch up processing new sim time
+      // Wait for sim to catch up processing new sim time. The scene thread
+      // steps every scene tick period (~10 ms); if the step has not happened
+      // after 30 ms the request was lost (a race with the scene thread), so
+      // issue it again instead of blocking the game thread forever.
+      double ReissueAt = FPlatformTime::Seconds() + 0.03;
       while (projectairsim::SimClock::Get()->NowSimNanos() < cur_sim_time) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
+        if (FPlatformTime::Seconds() > ReissueAt) {
+          projectairsim::SimClock::Get()->SetNextSimTime(cur_sim_time);
+          ReissueAt = FPlatformTime::Seconds() + 0.03;
+        }
       }
       // If cur_sim_time is now at the time for simclock to pause, pause
       // Unreal now so physics will not advance again at the next tick.
