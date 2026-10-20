@@ -519,14 +519,27 @@ void AUnrealRobot::OnCollisionHit(UPrimitiveComponent* HitComponent,
             projectairsim::TransformUtils::ToMeters(projectairsim::Vector3(
                 Hit.ImpactPoint.X, Hit.ImpactPoint.Y, Hit.ImpactPoint.Z)));
 
+    // When another actor moved into this robot, Unreal dispatches the mover's
+    // hit reversed (AActor::DispatchBlockingHit): the normals are flipped but
+    // Hit.Location is still where the *mover's* sweep stopped. Physics places
+    // the robot at the collision position, so the hit robot was teleported
+    // into the robot that hit it and the two stayed stuck together. The robot
+    // that was hit has not moved: its own location is the collision position.
+    const bool bHitByOther = (Hit.GetComponent() == HitComponent);
+    const FVector CollisionLocation = bHitByOther
+                                          ? HitComponent->GetComponentLocation()
+                                          : FVector(Hit.Location);
+
     // NEU_cm -> NEU_m -> NED_m
     NewCollisionInfo.position = projectairsim::TransformUtils::NeuToNedLinear(
         projectairsim::TransformUtils::ToMeters(projectairsim::Vector3(
-            Hit.Location.X, Hit.Location.Y, Hit.Location.Z)));
+            CollisionLocation.X, CollisionLocation.Y, CollisionLocation.Z)));
 
     // cm -> m
     NewCollisionInfo.penetration_depth =
-        projectairsim::TransformUtils::ToMeters(Hit.PenetrationDepth);
+        bHitByOther
+            ? 0.0f
+            : projectairsim::TransformUtils::ToMeters(Hit.PenetrationDepth);
 
     NewCollisionInfo.time_stamp = projectairsim::SimClock::Get()->NowSimNanos();
     NewCollisionInfo.object_name =
