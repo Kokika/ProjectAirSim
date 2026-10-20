@@ -221,6 +221,10 @@ struct CollisionInfo {  // Currently based on UE-provided collision info
   TimeNano time_stamp = 0;
   std::string object_name;
   int segmentation_id = -1;
+  // The other object is a robot. Physics must not treat resting on another
+  // robot as landed: a landed body is held still until thrust exceeds weight,
+  // which a hovering robot never commands, so it froze in mid-air for good.
+  bool other_is_robot = false;
 
   CollisionInfo() {}
 

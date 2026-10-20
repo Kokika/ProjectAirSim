@@ -549,14 +549,18 @@ void AUnrealRobot::OnCollisionHit(UPrimitiveComponent* HitComponent,
         Cast<class UPrimitiveComponent>(OtherActor->GetRootComponent());
     NewCollisionInfo.segmentation_id =
         OtherRootComp ? OtherRootComp->CustomDepthStencilValue : -1;
+    NewCollisionInfo.other_is_robot =
+        (Cast<AUnrealRobot>(OtherActor) != nullptr);
 
     SimRobot.UpdateCollisionInfo(NewCollisionInfo);
 
     if (HitComponent == RobotRootLink) {
       UnrealLogger::Log(
           projectairsim::LogLevel::kTrace,
-          TEXT("Collision detected between '%s' and '%s' at z= '%f'"),
-          *(HitComponent->GetName()), *(OtherActor->GetName()), Hit.Location.Z);
+          TEXT("Collision detected between '%s' of '%s' and '%s' at z= '%f' "
+               "(hit by other: %d, normal z: %.2f)"),
+          *(HitComponent->GetName()), *GetName(), *(OtherActor->GetName()),
+          Hit.Location.Z, bHitByOther ? 1 : 0, NewCollisionInfo.normal.z());
     }
   }
 }

@@ -287,6 +287,9 @@ bool FastPhysicsBody::IsStillGrounded() {
 
 bool FastPhysicsBody::IsLandingCollision() {
   if (!collision_info_.has_collided) return false;
+  // Touching another robot is a collision, never a landing (see
+  // CollisionInfo::other_is_robot).
+  if (collision_info_.other_is_robot) return false;
 
   // Check if collision normal is primarily vertically upward (assumes NED)
   const Vector3 normal_body = PhysicsUtils::TransformVectorToBodyFrame(
