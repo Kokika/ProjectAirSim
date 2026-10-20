@@ -5,11 +5,16 @@
 
 #include "core_sim/service_manager.hpp"
 
+#include <condition_variable>
+#include <deque>
 #include <exception>
 #include <map>
+#include <mutex>
 #include <shared_mutex>
 #include <string>
+#include <thread>
 #include <utility>
+#include <vector>
 
 #include "constant.hpp"
 #include "core_sim/error.hpp"
@@ -52,6 +57,8 @@ class ServiceManager::Impl {
     // Job state
     nng_aio* aio;
     nng_ctx ctx;
+    Impl* manager;
+    nng_msg* request_nng_msg;
     const std::map<std::string, MethodHandler>* methods_registry;
     const std::map<std::string, ParamsList>* method_parameters_registry;
     const std::string* parent_name;
@@ -100,6 +107,17 @@ class ServiceManager::Impl {
 
   static void JobRunner(void* job);
 
+  // Deserialize, run the handler and send the response, on a worker thread.
+  static void ProcessJob(Job* job);
+
+  void EnqueueJob(Job* job);
+
+  void WorkerLoop();
+
+  void StartWorkers();
+
+  void StopWorkers();
+
   void HandleNNGPipeEvent(nng_pipe pipe, nng_pipe_ev ev);
 
   //! Default configs to make services work "out-of-the-box";
@@ -111,7 +129,19 @@ class ServiceManager::Impl {
   // queued. Takes a few KBs per request-response loop; But, memory (not CPU
   // thread) limits apply; Also limited by number of available file discriptors
   // TODO: Expose as config
-  static constexpr const int kMaxConcurrentJobs = 64;
+  static constexpr const int kMaxConcurrentJobs = 128;
+
+  // Request handlers run on these worker threads, one per job, and not on the
+  // NNG AIO callback threads. Many handlers block until a sim-time duration has
+  // passed (e.g. MoveByVelocity, Takeoff). NNG has only one task thread per CPU,
+  // so with more blocking requests than CPUs in flight, no thread was left to
+  // serve ContinueForSimTime and the stepped clock deadlocked. One worker per
+  // job means a received request always has a free thread.
+  std::mutex work_mutex_;
+  std::condition_variable work_cv_;
+  std::deque<Job*> work_queue_;
+  std::vector<std::thread> workers_;
+  bool workers_stop_ = false;
 
   // TODO make this a global extern string
   static constexpr float kApiVersion = 1.0f;
@@ -193,6 +223,8 @@ void ServiceManager::Impl::Start() {
   logger_.LogTrace(name_, "nng socket for services created '%d'.",
                    service_socket_);
 
+  StartWorkers();
+
   // Initialize jobs and bind their AIO callbacks to JobRunner() state machine
   for (int job_num = 0; job_num < kMaxConcurrentJobs; job_num++) {
     CreateJob(service_socket_, this, &jobs_[job_num]);
@@ -243,6 +275,9 @@ void ServiceManager::Impl::Stop() {
     logger_.LogError(name_, "nng_close for services failed with '%s'.",
                      errno_str);
   }
+
+  // Finish the requests being processed before their AIO handles are freed
+  StopWorkers();
 
   // Stop all AIO Runners & free the async I/O handle
   for (int job_num = 0; job_num < kMaxConcurrentJobs; job_num++) {
@@ -406,14 +441,7 @@ void ServiceManager::Impl::RunJob(Job* job) {
   if (job->parent_is_alive->load() == false) return;
 
   //! State Machine to handle async requests job
-  RequestMessage request_msg;
-  const char* request_buffer;
-  std::string request_buffer_str;
-  std::string response;
-  nng_msg* request_nng_msg;
-  nng_msg* response_nng_msg;
   int rv;
-  TimeNano service_method_start_time = 0;
 
   switch (job->state) {
     case JobState::kListening:
@@ -437,86 +465,15 @@ void ServiceManager::Impl::RunJob(Job* job) {
       return;
 
     case JobState::kProcessing:
-      service_method_start_time = SimClock::Get()->NowSimNanos();
-
       //! 0. Check if prev request was not received successfully
       if ((rv = nng_aio_result(job->aio)) != 0) {
         // job->logger->LogError(*(job->parent_name), "nng_ctx_recv: %d", rv);
       }
 
-      //! 1. Retrieve the request message
-      request_nng_msg = nng_aio_get_msg(job->aio);
-
-      if (request_nng_msg == nullptr) {
-        // Handle bad or null request message
-        // job->logger->LogError(*(job->parent_name),
-        //                       "nng_aio_get_msg: Got bad request");
-        response = "Error: Got bad request message.";
-      } else {
-        //! 2. Extract the request body
-        request_buffer =
-            static_cast<const char*>(nng_msg_body(request_nng_msg));
-        std::string request_buffer_str;
-        size_t request_len = nng_msg_len(request_nng_msg);
-        request_buffer_str.resize(request_len);
-        request_buffer_str.assign(request_buffer, request_len);
-
-        if (request_len < 1)
-          response = "Error: Got bad request message.";
-        else {
-          try {
-            //! 3. Deserialize the request body
-            switch (kSerializationType) {
-              case (SerializationType::kPureJSON):
-                request_msg.DeserializeFromJsonStr(request_buffer_str);
-                break;
-
-              case (SerializationType::kMsgpackJSON):
-              default:
-                request_msg.Deserialize(request_buffer_str);
-                break;
-            }
-
-            //! 4. Get the request data
-            job->request_id = request_msg.GetID();
-            job->request_method = request_msg.GetMethod();
-            job->request_params = request_msg.GetParams();
-
-            //! 5. Process requested method and get response
-            response = ServiceManager::Impl::RequestResponse(
-                service_method_start_time, job);
-          } catch (...) {
-            response = "Error: Got bad request message.";
-          }
-        }
-      }
-
-      //! 6. Pack response into NNG message to send back
-      // Alloc mem for job->response_nng_msg.body
-      if ((rv = nng_msg_alloc(&response_nng_msg, response.length())) != 0) {
-        // job->logger->LogError(*(job->parent_name),
-        //                       "While preparing response, nng_msg_alloc:
-        //                       %d", rv);
-        nng_msg_free(response_nng_msg);
-      } else {
-        // Set response data
-        std::memcpy(nng_msg_body(response_nng_msg), response.c_str(),
-                    response.length());
-      }
-
-      //! 7. Set the response message to be sent
-      nng_aio_set_msg(job->aio, response_nng_msg);
-
-      //! 8. Send the response
-      // Move state to be listening for when it comes back to this state
-      // machine by the AIO callback after completing sending the response by
-      // the following NNG send call.
-      job->state = JobState::kListening;
-      // Send NNG async response. When the send is completed, it will come
-      // back by callback to re-enter this state machine method.
-      nng_ctx_send(job->ctx, job->aio);
-      // No further processing should be done here to avoid overlapping state
-      // for this job with the callback called by nng_ctx_send() above.
+      //! 1. Retrieve the request message and hand the job to a worker thread,
+      // which processes it and sends the response (see ProcessJob).
+      job->request_nng_msg = rv == 0 ? nng_aio_get_msg(job->aio) : nullptr;
+      job->manager->EnqueueJob(job);
       return;
 
     default: {
@@ -525,6 +482,136 @@ void ServiceManager::Impl::RunJob(Job* job) {
       return;
     }
   }
+}
+
+void ServiceManager::Impl::ProcessJob(Job* job) {
+  RequestMessage request_msg;
+  const char* request_buffer;
+  std::string response;
+  nng_msg* request_nng_msg = job->request_nng_msg;
+  nng_msg* response_nng_msg;
+  int rv;
+  TimeNano service_method_start_time = SimClock::Get()->NowSimNanos();
+  job->request_nng_msg = nullptr;
+
+  if (request_nng_msg == nullptr) {
+    // Handle bad or null request message
+    // job->logger->LogError(*(job->parent_name),
+    //                       "nng_aio_get_msg: Got bad request");
+    response = "Error: Got bad request message.";
+  } else {
+    //! 2. Extract the request body
+    request_buffer = static_cast<const char*>(nng_msg_body(request_nng_msg));
+    std::string request_buffer_str;
+    size_t request_len = nng_msg_len(request_nng_msg);
+    request_buffer_str.resize(request_len);
+    request_buffer_str.assign(request_buffer, request_len);
+
+    if (request_len < 1)
+      response = "Error: Got bad request message.";
+    else {
+      try {
+        //! 3. Deserialize the request body
+        switch (kSerializationType) {
+          case (SerializationType::kPureJSON):
+            request_msg.DeserializeFromJsonStr(request_buffer_str);
+            break;
+
+          case (SerializationType::kMsgpackJSON):
+          default:
+            request_msg.Deserialize(request_buffer_str);
+            break;
+        }
+
+        //! 4. Get the request data
+        job->request_id = request_msg.GetID();
+        job->request_method = request_msg.GetMethod();
+        job->request_params = request_msg.GetParams();
+
+        //! 5. Process requested method and get response
+        response = ServiceManager::Impl::RequestResponse(
+            service_method_start_time, job);
+      } catch (...) {
+        response = "Error: Got bad request message.";
+      }
+    }
+    nng_msg_free(request_nng_msg);
+  }
+
+  //! 6. Pack response into NNG message to send back
+  // Alloc mem for job->response_nng_msg.body
+  if ((rv = nng_msg_alloc(&response_nng_msg, response.length())) != 0) {
+    // job->logger->LogError(*(job->parent_name),
+    //                       "While preparing response, nng_msg_alloc:
+    //                       %d", rv);
+    nng_msg_free(response_nng_msg);
+  } else {
+    // Set response data
+    std::memcpy(nng_msg_body(response_nng_msg), response.c_str(),
+                response.length());
+  }
+
+  //! 7. Set the response message to be sent
+  nng_aio_set_msg(job->aio, response_nng_msg);
+
+  //! 8. Send the response
+  // Move state to be listening for when it comes back to this state
+  // machine by the AIO callback after completing sending the response by
+  // the following NNG send call.
+  job->state = JobState::kListening;
+  // Send NNG async response. When the send is completed, it will come
+  // back by callback to re-enter this state machine method.
+  nng_ctx_send(job->ctx, job->aio);
+  // No further processing should be done here to avoid overlapping state
+  // for this job with the callback called by nng_ctx_send() above.
+}
+
+void ServiceManager::Impl::EnqueueJob(Job* job) {
+  {
+    std::lock_guard<std::mutex> lock(work_mutex_);
+    work_queue_.push_back(job);
+  }
+  work_cv_.notify_one();
+}
+
+void ServiceManager::Impl::WorkerLoop() {
+  while (true) {
+    Job* job;
+    {
+      std::unique_lock<std::mutex> lock(work_mutex_);
+      work_cv_.wait(lock,
+                    [this] { return workers_stop_ || !work_queue_.empty(); });
+      if (work_queue_.empty()) return;  // stopping and nothing left to do
+      job = work_queue_.front();
+      work_queue_.pop_front();
+    }
+    if (is_alive_.load()) {
+      ProcessJob(job);
+    } else if (job->request_nng_msg != nullptr) {
+      nng_msg_free(job->request_nng_msg);
+      job->request_nng_msg = nullptr;
+    }
+  }
+}
+
+void ServiceManager::Impl::StartWorkers() {
+  workers_stop_ = false;
+  workers_.reserve(kMaxConcurrentJobs);
+  for (int i = 0; i < kMaxConcurrentJobs; i++) {
+    workers_.emplace_back(&ServiceManager::Impl::WorkerLoop, this);
+  }
+}
+
+void ServiceManager::Impl::StopWorkers() {
+  {
+    std::lock_guard<std::mutex> lock(work_mutex_);
+    workers_stop_ = true;
+  }
+  work_cv_.notify_all();
+  for (auto& worker : workers_) {
+    if (worker.joinable()) worker.join();
+  }
+  workers_.clear();
 }
 
 void ServiceManager::Impl::CreateJob(nng_socket sock,
@@ -547,6 +634,8 @@ void ServiceManager::Impl::CreateJob(nng_socket sock,
   }
 
   // Save management pointers
+  new_job->manager = const_cast<ServiceManager::Impl*>(manager);
+  new_job->request_nng_msg = nullptr;
   new_job->methods_registry = &manager->methods_registry_;
   new_job->method_parameters_registry = &manager->method_parameters_registry_;
   new_job->parent_name = &manager->name_;
