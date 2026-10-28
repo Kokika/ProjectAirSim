@@ -1137,7 +1137,15 @@ bool AUnrealRobot::SetBrakes(float Value) {
 
 void AUnrealRobot::ApplyThrottle(float Value) {
   if (ProjectAirSimVehicleMovement != nullptr) {
-    ProjectAirSimVehicleMovement->SetThrottleInput(Value);
+    // Chaos clamps throttle input to [0, 1] and reverse-as-brake is off, so a
+    // negative throttle is driven as throttle in reverse gear.
+    const int32 Gear = ProjectAirSimVehicleMovement->GetTargetGear();
+    if (Value < 0.0f && Gear >= 0) {
+      ProjectAirSimVehicleMovement->SetTargetGear(-1, true);
+    } else if (Value > 0.0f && Gear < 0) {
+      ProjectAirSimVehicleMovement->SetTargetGear(1, true);
+    }
+    ProjectAirSimVehicleMovement->SetThrottleInput(FMath::Abs(Value));
   }
 }
 
@@ -1322,7 +1330,7 @@ void AUnrealRobot::TickProjectAirSimVehicle(float DeltaTime) {
         // Feed Chaos when mechanical simulation is enabled. Otherwise use the
         // direct-force fallback, but never apply both propulsion paths.
         if (ProjectAirSimVehicleMovement != nullptr) {
-          ProjectAirSimVehicleMovement->SetThrottleInput(Throttle);
+          ApplyThrottle(Throttle);
           ProjectAirSimVehicleMovement->SetBrakeInput(Brake);
           ProjectAirSimVehicleMovement->SetSteeringInput(Steering);
 
