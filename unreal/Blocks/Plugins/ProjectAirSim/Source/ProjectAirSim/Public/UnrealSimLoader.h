@@ -75,13 +75,13 @@ class PROJECTAIRSIM_API AUnrealSimLoader {
   // --------------------------------------------------------------------
   // Member variables
 
-  UWorld* UnrealWorld;
+  UWorld* UnrealWorld = nullptr;
 
   std::shared_ptr<microsoft::projectairsim::SimServer> SimServer;
 
-  AUnrealScene* UnrealScene;
-  AGISRenderer* GISRenderer;
-  AUnrealSimTopicData* UnrealSimTopicData;
+  AUnrealScene* UnrealScene = nullptr;
+  AGISRenderer* GISRenderer = nullptr;
+  AUnrealSimTopicData* UnrealSimTopicData = nullptr;
 
   std::ofstream SimLogFile;
 

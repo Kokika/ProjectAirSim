@@ -7,10 +7,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "UnrealSimLoader.h"
 
 //
 #include "ProjectAirSimGameMode.generated.h"
+
+// Defined in UnrealSimLoader.h, which pulls in the plugin's private headers.
+// Only a pointer is kept here so that other modules can subclass this game
+// mode without the plugin's private include paths.
+class AUnrealSimLoader;
 
 UCLASS()
 class PROJECTAIRSIM_API AProjectAirSimGameMode : public AGameModeBase {
@@ -19,10 +23,12 @@ class PROJECTAIRSIM_API AProjectAirSimGameMode : public AGameModeBase {
  public:
   explicit AProjectAirSimGameMode(const FObjectInitializer& ObjectInitializer);
 
+  ~AProjectAirSimGameMode() override;
+
   void StartPlay() override;
 
   void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
  private:
-  AUnrealSimLoader UnrealSimLoader;
+  AUnrealSimLoader* UnrealSimLoader = nullptr;
 };

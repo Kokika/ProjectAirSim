@@ -8,24 +8,28 @@
 #include <exception>
 
 #include "Runtime/Core/Public/Misc/Paths.h"
+#include "UnrealSimLoader.h"
 
 AProjectAirSimGameMode::AProjectAirSimGameMode(
     const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer),
-      UnrealSimLoader(FPaths::ConvertRelativePathToFull(FPaths::ProjectDir())) {
+      UnrealSimLoader(new AUnrealSimLoader(
+          FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()))) {
   DefaultPawnClass = nullptr;
   FApp::bUseFixedSeed = true;  // for determinism, persists in UE project
 }
 
+AProjectAirSimGameMode::~AProjectAirSimGameMode() { delete UnrealSimLoader; }
+
 void AProjectAirSimGameMode::StartPlay() {
   Super::StartPlay();
 
-  UnrealSimLoader.LaunchSimulation(this->GetWorld());
+  UnrealSimLoader->LaunchSimulation(this->GetWorld());
 }
 
 void AProjectAirSimGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
   Super::EndPlay(EndPlayReason);
 
-  UnrealSimLoader.TeardownSimulation();
+  UnrealSimLoader->TeardownSimulation();
   FApp::bUseFixedSeed = false;  // reset back to default from App.cpp
 }
